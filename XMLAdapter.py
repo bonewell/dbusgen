@@ -49,3 +49,56 @@ class XMLAdapter(Adapter):
         func.interface = interface
         return func
 
+    def structures(self, interface):
+        structs = []
+        query = "interface[@name='%s']/struct" % interface.name
+        for item in self.tree.findall(query):
+            struct = Structure()
+            struct.name = item.get('name')
+            struct.interface = interface
+            structs.append(struct)
+        return structs
+
+    def structure(self, name, interface):
+        query = "interface[@name='%s']/struct[@name='%s']" % (interface.name, name)
+        item = self.tree.find(query)
+        if item is None:
+            return None
+        struct = Structure()
+        struct.name = item.get('name')
+        struct.interface = interface
+        return struct
+
+    def elements(self, interface, enum):
+        els = []
+        query = "interface[@name='%s']/enum[@name='%s']/element" % (interface.name, enum.name)
+        for item in self.tree.findall(query):
+            el = EnumerationElement()
+            el.name = item.get('name')
+            el.internal_name = item.get('internal_name')
+            value = item.get('value')
+            el.value = None if value is None else int(value)
+            els.append(el)
+        return els
+
+    def enumerations(self, interface):
+        enums = []
+        query = "interface[@name='%s']/enum" % interface.name
+        for item in self.tree.findall(query):
+            enum = Enumeration()
+            enum.name = item.get('name')
+            enum.interface = interface
+            enum.elements = self.elements(interface, enum)
+            enums.append(enum)
+        return enums
+
+    def enumeration(self, name, interface):
+        query = "interface[@name='%s']/enum[@name='%s']" % (interface.name, name)
+        item = self.tree.find(query)
+        if item is None:
+            return None
+        enum = Enumeration()
+        enum.name = item.get('name')
+        enum.interface = interface
+        enum.elements = self.elements(interface, enum)
+        return enum
