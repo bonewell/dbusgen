@@ -1,0 +1,22 @@
+from terms.Function import *
+from terms.Structure import *
+
+class Parameter(object):
+    """
+        Has atributes:
+            - string name
+            - string type
+            - bool mandatory
+            - int minlength
+            - int maxlength
+            - int minsize
+            - int maxsize
+            - bool is_array
+            - string minvalue
+            - string maxvalue
+            - string defvalue
+            - bool is_struct
+            - Function function
+            - Structure structure
+    """
+    pass
