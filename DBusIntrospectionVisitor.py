@@ -2,7 +2,5 @@ from protocol.Visitor import *
 from protocol.Component import *
 
 class DBusIntrospectionVisitor (Visitor):
-
-    pass
-
-
+    def visit(self, host):
+        return True

@@ -1,18 +1,16 @@
-from protocol.Component import *
-from protocol.Composite import *
-from protocol.Visitor import *
+from protocol.Composite import Composite
+from protocol.Interface import Interface
 
-class Protocol (Component, Composite):
+class Protocol(Composite):
+    def __init__(self, adapter):
+        Composite.__init__(self, adapter)
 
     def load(self):
-        for x in adapter.interfaces():
-          elements.append(Interface(x))
-
+        print('Protocol: load')
+        for x in self.adapter.interfaces():
+            self.elements.append(Interface(self.adapter, x))
 
     def accept(self, v):
+        print('Protocol: accept')
         if v.visit(self):
-          process(v)
-
-
-
-
+            self.process(v)

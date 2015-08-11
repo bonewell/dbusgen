@@ -1,12 +1,6 @@
-from protocol.Component import *
-from protocol.Visitor import *
-from terms.Enumeration import *
+from protocol.Component import Component
 
-class Enumeration (Component):
-
+class Enumeration(Component):
     def accept(self, v):
+        print('Enumeration: accept')
         v.visit(self)
-
-
-
-

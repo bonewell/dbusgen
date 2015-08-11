@@ -15,8 +15,7 @@ class Parameter(object):
             - string minvalue
             - string maxvalue
             - string defvalue
-            - bool is_struct
-            - Function function
-            - Structure structure
+            - bool is_structure
+            - object parent
     """
     pass
