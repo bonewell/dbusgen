@@ -37,8 +37,11 @@ class XMLAdapter(Adapter):
             funcs.append(func)
         return funcs
 
-    def function(self, name, interface):
-        query = "interface[@name='%s']/function[@name='%s']" % (interface.name, name)
+    def function(self, name, interface, type = None):
+        if type is None:
+            query = "interface[@name='%s']/function[@name='%s']" % (interface.name, name)
+        else:
+            query = "interface[@name='%s']/function[@name='%s'][@messagetype='%s']" % (interface.name, name, type)
         item = self.tree.find(query)
         if item is None:
             return None
@@ -102,3 +105,49 @@ class XMLAdapter(Adapter):
         enum.interface = interface
         enum.elements = self.elements(interface, enum)
         return enum
+
+    def parameters(self, parent):
+        if type(parent).__name__ == 'Structure':
+            return self.structureParameters(parent)
+        if type(parent).__name__ == 'Function':
+            return self.functionParameters(parent)
+        return None
+
+    def functionParameters(self, func):
+        params = []
+        query = "interface[@name='%s']/function[@name='%s'][@messagetype='%s']/param" % (func.interface.name, func.name, func.type)
+        for item in self.tree.findall(query):
+            param = self.createParameter(item)
+            param.is_structure = False
+            param.parent = func
+            params.append(param)
+        return params
+
+    def structureParameters(self, struct):
+        params = []
+        query = "interface[@name='%s']/struct[@name='%s']/param" % (struct.interface.name, struct.name)
+        for item in self.tree.findall(query):
+            param = self.createParameter(item)
+            param.is_structure = True
+            param.parent = struct
+            params.append(param)
+        return params
+
+    def createParameter(self, item):
+        param = Parameter()
+        param.name = item.get('name')
+        param.type = item.get('type')
+        mandatory = item.get('mandatory')
+        param.mandatory = False if mandatory == 'false' else True
+        minlength = item.get('minlength')
+        param.minlength = 0 if minlength is None else minlength
+        param.maxlength = item.get('maxlength')
+        param.minsize = item.get('minsize')
+        param.maxsize = item.get('maxsize')
+        is_array = item.get('array')
+        param.is_array = True if is_array == 'true' else False
+        minvalue = item.get('minvalue')
+        param.minvalue = 0 if minvalue is None else minvalue
+        param.maxvalue = item.get('maxvalue')
+        param.defvalue = item.get('defvalue')
+        return param

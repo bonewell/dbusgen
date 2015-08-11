@@ -1,6 +1,8 @@
 from unittest import TestCase
 from XMLAdapter import XMLAdapter
 from terms.Interface import *
+from terms.Structure import *
+from terms.Function import *
 
 class TestXMLAdapter(TestCase):
     adapter = XMLAdapter('QT_HMI_API.xml')
@@ -24,10 +26,10 @@ class TestXMLAdapter(TestCase):
     def test_function(self):
         buttons = Interface()
         buttons.name = 'Buttons'
-        on_event = self.adapter.function('OnButtonEvent', buttons)
-        self.assertIsNotNone(on_event)
-        self.assertEqual(on_event.name, 'OnButtonEvent')
-        self.assertEqual(on_event.type, 'response')
+        get_cap = self.adapter.function('GetCapabilities', buttons, 'response')
+        self.assertIsNotNone(get_cap)
+        self.assertEqual(get_cap.name, 'GetCapabilities')
+        self.assertEqual(get_cap.type, 'response')
         no_found = self.adapter.function('ErrorName', buttons)
         self.assertIsNone(no_found)
 
@@ -66,6 +68,35 @@ class TestXMLAdapter(TestCase):
         self.assertEqual(event.elements[1].name, 'BUTTONDOWN')
         no_found = self.adapter.enumeration('ErrorName', common)
         self.assertIsNone(no_found)
+
+    def test_parameters_structure(self):
+        common = Interface()
+        common.name = 'Common'
+        service = Structure()
+        service.name = 'ServiceInfo'
+        service.interface = common
+        args = self.adapter.parameters(service)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(args[0].name, 'url')
+        self.assertEqual(args[0].type, 'String')
+        self.assertTrue(args[0].mandatory)
+        self.assertEqual(args[1].name, 'policyAppId')
+        self.assertEqual(args[1].type, 'String')
+        self.assertFalse(args[1].mandatory)
+
+    def test_parameters_function(self):
+        common = Interface()
+        common.name = 'BasicCommunication'
+        on_resume = Function()
+        on_resume.name = 'OnResumeAudioSource'
+        on_resume.type = 'notification'
+        on_resume.provider = 'sdl'
+        on_resume.interface = common
+        args = self.adapter.parameters(on_resume)
+        self.assertEqual(len(args), 1)
+        self.assertEqual(args[0].name, 'appID')
+        self.assertEqual(args[0].type, 'Integer')
+        self.assertTrue(args[0].mandatory)
 
 if __name__ == '__main__':
     unittest.main()
