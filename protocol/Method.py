@@ -1,24 +1,20 @@
-from protocol.Component import *
-from protocol.Composite import *
-from protocol.Argument import *
-from terms.Adapter import *
-from protocol.Visitor import *
-from terms.Function import *
+from protocol.Composite import Composite
+from protocol.Argument import Argument
+from protocol.Argument import TypeArgument
 
-class Method (Component, Composite):
+class Method(Composite):
+    def __init__(self, adapter, request, response):
+        Composite.__init__(self, adapter)
+        self.request = request
+        self.response = response
 
     def load(self):
-        for x in adapter.parameters(request):
-          elements.append(Argument(x, Input))
-        
-        for x in adapter.parameters(response):
-          elements.append(Argument(x, Output))
+        for x in self.adapter.parameters(self.request):
+            self.elements.append(Argument(self.adapter, x, TypeArgument.Input))
 
+        for x in self.adapter.parameters(self.response):
+            self.elements.append(Argument(self.adapter, x, TypeArgument.Output))
 
     def accept(self, v):
         if v.visit(self):
-          process(v)
-
-
-
-
+            self.process(v)
