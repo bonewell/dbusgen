@@ -1,6 +1,3 @@
-from terms.EnumerationElement import *
-from terms.Interface import *
-
 class Enumeration(object):
     """
         Has atributes:

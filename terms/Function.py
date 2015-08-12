@@ -1,5 +1,3 @@
-from terms.Interface import *
-
 class Function(object):
     """
         Has atributes:

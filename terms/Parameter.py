@@ -1,6 +1,3 @@
-from terms.Function import *
-from terms.Structure import *
-
 class Parameter(object):
     """
         Has atributes:
