@@ -10,9 +10,8 @@ class Interface(Composite):
         self.info = info
 
     def load(self):
-        print('Interface: load')
         for x in self.adapter.enumerations(self.info):
-            self.elements.append(Enumeration(x))
+            self.elements.append(Enumeration(self.adapter, x))
         
         for x in self.adapter.structures(self.info):
             self.elements.append(Structure(self.adapter, x))
@@ -33,6 +32,5 @@ class Interface(Composite):
                 self.elements.append(Method(self.adapter, request, response))
 
     def accept(self, v):
-        print('Interface: accept')
         if v.visit(self):
             self.process(v)

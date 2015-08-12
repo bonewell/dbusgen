@@ -12,5 +12,4 @@ class Argument(Component):
         self.info = info
 
     def accept(self, v):
-        print('Argument: accept')
         v.visit(self)

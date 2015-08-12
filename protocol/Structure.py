@@ -8,11 +8,9 @@ class Structure(Composite):
         self.info = info
 
     def load(self):
-        print('Structure: load')
         for x in self.adapter.parameters(self.info):
             self.elements.append(Argument(x, self.info, TypeArgument.Undefined))
 
     def accept(self, v):
-        print('Structure: accept')
         if v.visit(self):
             self.process(v)

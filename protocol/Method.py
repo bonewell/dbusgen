@@ -9,7 +9,6 @@ class Method(Composite):
         self.response = response
 
     def load(self):
-        print('Method: load')
         for x in self.adapter.parameters(self.request):
             self.elements.append(Argument(self.adapter, x, TypeArgument.Input))
 
@@ -17,6 +16,5 @@ class Method(Composite):
             self.elements.append(Argument(self.adapter, x, TypeArgument.Output))
 
     def accept(self, v):
-        print('Method: accept')
         if v.visit(self):
             self.process(v)

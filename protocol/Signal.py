@@ -8,11 +8,9 @@ class Signal(Composite):
         self.info = info
 
     def load(self):
-        print('Signal: load')
         for x in self.adapter.parameters(self.info):
             self.elements.append(Argument(x, TypeArgument.Undefined))
 
     def accept(self, v):
-        print('Signal: accept')
         if v.visit(self):
             self.process(v)
