@@ -189,15 +189,16 @@ class FordXmlParser:
     def convert_to_method(self, (request_el, response_el), interface):
         result = ElementTree.Element('method')
         result.set('name', request_el.get('name'))
-        for param_el in request_el.findall('param'):
-            arg_el = self.create_arg_element(result, param_el, interface)
-            arg_el.set('direction', 'in')
 
         arg_el = ElementTree.SubElement(result, 'arg')
         arg_el.set('name', 'retCode')
         arg_el.set('type', 'i')
         arg_el.set('direction', 'out')
-        
+
+        for param_el in request_el.findall('param'):
+            arg_el = self.create_arg_element(result, param_el, interface)
+            arg_el.set('direction', 'in')
+
         for param_el in response_el.findall('param'):
             arg_el = self.create_arg_element(result, param_el, interface)
             arg_el.set('direction', 'out')
@@ -223,8 +224,8 @@ class FordXmlParser:
 
         if signals or methods:
             el = ElementTree.Element('interface', attrib={'name':interface_name})
-            for m in methods: el.append(m)
             for s in signals: el.append(s)
+            for m in methods: el.append(m)
             return el
 
 

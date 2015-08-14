@@ -10,5 +10,6 @@ args = arg_parser.parse_args()
 
 xml = XMLAdapter(args.infile)
 proto = Protocol(xml)
-v = DBusIntrospectionVisitor()
+v = DBusIntrospectionVisitor('sdl', 'com.ford.hmi', '/com/ford/hmi')
 proto.accept(v)
+print(v.xml())

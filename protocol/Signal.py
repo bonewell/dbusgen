@@ -9,7 +9,7 @@ class Signal(Composite):
 
     def load(self):
         for x in self.adapter.parameters(self.info):
-            self.elements.append(Argument(x, TypeArgument.Undefined))
+            self.elements.append(Argument(self.adapter, x, TypeArgument.Undefined))
 
     def accept(self, v):
         if v.visit(self):
