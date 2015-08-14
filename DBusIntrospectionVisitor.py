@@ -12,24 +12,24 @@ class DBusIntrospectionVisitor(Visitor):
         self.enums = []
         self.structs = {}
 
-    def visitProtocol(self, host):
+    def visitProtocol(self, protocol):
         print('Visit protocol')
         return True
 
-    def visitInterface(self, host):
-        print('Visit interface %s' % host.info.name)
-        name = '%s.%s.%s' % (self.domain, self.provider, host.info.name)
+    def visitInterface(self, iface):
+        print('Visit interface %s' % iface.name())
+        name = '%s.%s.%s' % (self.domain, self.provider, iface.name())
         self.iface = ElementTree.Element('interface', attrib={'name': name})
         self.empty_iface = True
         return True
 
-    def visitEnumeration(self, host):
-        fullname = '%s.%s' % (host.info.interface.name, host.info.name)
+    def visitEnumeration(self, enum):
+        fullname = '%s.%s' % (enum.interface(), enum.name())
         print('Visit enumeration %s' % fullname)
         self.enums.append(fullname)
 
-    def visitStructure(self, host):
-        fullname = '%s.%s' % (host.info.interface.name, host.info.name)
+    def visitStructure(self, struct):
+        fullname = '%s.%s' % (struct.interface(), struct.name())
         print('Visit structure %s' % fullname)
         self.structs[fullname] = ''
         return True
@@ -39,57 +39,55 @@ class DBusIntrospectionVisitor(Visitor):
             self.tree.append(self.iface)
             self.empty_iface = False
 
-    def visitSignal(self, host):
-        print('Visit signal %s' % host.info.name)
-        need = host.info.provider == self.provider
+    def visitSignal(self, signal):
+        print('Visit signal %s' % signal.name())
+        need = signal.provider() == self.provider
         if need:
             self.appendInterface()
-            self.parent = ElementTree.Element('signal', attrib={'name': host.info.name})
+            self.parent = ElementTree.Element('signal', attrib={'name': signal.name()})
             self.iface.append(self.parent)
         return need
 
-    def visitMethod(self, host):
-        print('Visit method %s' % host.request.name)
-        need = host.request.provider == self.provider
+    def visitMethod(self, method):
+        print('Visit method %s' % method.name())
+        need = method.provider() == self.provider
         if need:
             self.appendInterface()
-            self.parent = ElementTree.Element('method', attrib={'name': host.request.name})
+            self.parent = ElementTree.Element('method', attrib={'name': method.name()})
             ElementTree.SubElement(self.parent, 'arg', attrib={'name': 'retCode', 'type': 'i', 'direction': 'out'})
             self.iface.append(self.parent)
         return need
 
-    def prepareStruct(self, host):
-        code = self.signature(host)
-        fullname = '%s.%s' % (host.info.parent.interface.name, host.info.parent.name)
+    def prepareStruct(self, struct):
+        code = self.signature(struct)
+        fullname = '%s.%s' % (struct.interface(), struct.parent())
         self.structs[fullname] += code
 
-    def visitArgument(self, host):
-        print('Visit argument %s' % host.info.name)
-        if host.info.is_structure:
-            self.prepareStruct(host)
+    def visitArgument(self, arg):
+        print('Visit argument %s' % arg.name())
+        if arg.isStruct():
+            self.prepareStruct(arg)
         else:
-            self.createArgument(host)
+            self.createArgument(arg)
 
-    def createArgument(self, host):
-        arg = ElementTree.SubElement(self.parent, 'arg', attrib={'name': host.info.name})
-        arg.set('type', self.signature(host))
-        if host.type == TypeArgument.Input:
-            arg.set('direction', 'in')
-        if host.type == TypeArgument.Output:
-            arg.set('direction', 'out')
+    def createArgument(self, arg):
+        el = ElementTree.SubElement(self.parent, 'arg', attrib={'name': arg.name()})
+        el.set('type', self.signature(arg))
+        if arg.direction == TypeArgument.Input:
+            el.set('direction', 'in')
+        if arg.direction == TypeArgument.Output:
+            el.set('direction', 'out')
 
-    def signature(self, host):
-        ptype = host.info.type
-        code = ''
-        if ptype == 'Integer': code = 'i'
-        elif ptype == 'String': code = 's'
-        elif ptype == 'Boolean': code = 'b'
-        elif ptype == 'Float': code = 'd'
-        elif ptype in self.enums: code = 'i'
-        elif ptype in self.structs: code = '(%s)' % self.structs[ptype]
-        else: raise RuntimeError('Unknown type: %s' % ptype)
-        if host.info.is_array: code = 'a%s' % code
-        if not host.info.mandatory: code = '(b%s)' % code
+    def signature(self, arg):
+        if arg.type() == 'Integer': code = 'i'
+        elif arg.type() == 'String': code = 's'
+        elif arg.type() == 'Boolean': code = 'b'
+        elif arg.type() == 'Float': code = 'd'
+        elif arg.type() in self.enums: code = 'i'
+        elif arg.type() in self.structs: code = '(%s)' % self.structs[arg.type()]
+        else: raise RuntimeError('Unknown type: %s' % arg.type())
+        if arg.isArray(): code = 'a%s' % code
+        if not arg.isMandatory(): code = '(b%s)' % code
         return code
 
     def xml(self, interface = None):

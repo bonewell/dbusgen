@@ -14,3 +14,9 @@ class Signal(Composite):
     def accept(self, v):
         if v.visit(self):
             self.process(v)
+
+    def name(self):
+        return self.info.name
+
+    def provider(self):
+        return self.info.provider

@@ -14,3 +14,9 @@ class Structure(Composite):
     def accept(self, v):
         if v.visit(self):
             self.process(v)
+
+    def name(self):
+        return self.info.name
+
+    def interface(self):
+        return self.info.interface.name

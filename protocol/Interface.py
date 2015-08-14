@@ -34,3 +34,6 @@ class Interface(Composite):
     def accept(self, v):
         if v.visit(self):
             self.process(v)
+
+    def name(self):
+        return self.info.name

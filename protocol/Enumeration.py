@@ -7,3 +7,9 @@ class Enumeration(Component):
 
     def accept(self, v):
         v.visit(self)
+
+    def name(self):
+        return self.info.name
+
+    def interface(self):
+        return self.info.interface.name

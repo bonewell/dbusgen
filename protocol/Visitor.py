@@ -18,23 +18,23 @@ class Visitor(object):
         print('Unkown accepter %s' % accepter)
         return False
 
-    def visitProtocol(self, host):
+    def visitProtocol(self, protocol):
         pass
 
-    def visitInterface(self, host):
+    def visitInterface(self, iface):
         pass
 
-    def visitEnumeration(self, host):
+    def visitEnumeration(self, enum):
         pass
 
-    def visitStructure(self, host):
+    def visitStructure(self, struct):
         pass
 
-    def visitSignal(self, host):
+    def visitSignal(self, signal):
         pass
 
-    def visitMethod(self, host):
+    def visitMethod(self, method):
         pass
 
-    def visitArgument(self, host):
+    def visitArgument(self, arg):
         pass
