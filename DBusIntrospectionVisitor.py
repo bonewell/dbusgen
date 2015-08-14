@@ -5,13 +5,12 @@ from protocol.Argument import TypeArgument
 class DBusIntrospectionVisitor(Visitor):
     doctype = '<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">'
 
-    def __init__(self, domain, path):
+    def __init__(self, provider, domain, path):
+        self.provider = provider
         self.domain = domain
         self.tree = ElementTree.Element('node', attrib={'name': path})
         self.enums = []
         self.structs = {}
-        self.provider = None
-        self.interface = None
 
     def visitProtocol(self, host):
         print('Visit protocol')
@@ -35,25 +34,25 @@ class DBusIntrospectionVisitor(Visitor):
         self.structs[fullname] = ''
         return True
 
-    def appendInterface(self, interface):
-        need = self.interface is None or self.interface == interface.name
-        if need and self.empty_iface:
+    def appendInterface(self):
+        if self.empty_iface:
             self.tree.append(self.iface)
             self.empty_iface = False
-        return need
 
     def visitSignal(self, host):
         print('Visit signal %s' % host.info.name)
-        need = host.info.provider == self.provider and self.appendInterface(host.info.interface)
+        need = host.info.provider == self.provider
         if need:
+            self.appendInterface()
             self.parent = ElementTree.Element('signal', attrib={'name': host.info.name})
             self.iface.append(self.parent)
         return need
 
     def visitMethod(self, host):
         print('Visit method %s' % host.request.name)
-        need = host.request.provider == self.provider and self.appendInterface(host.request.interface)
+        need = host.request.provider == self.provider
         if need:
+            self.appendInterface()
             self.parent = ElementTree.Element('method', attrib={'name': host.request.name})
             ElementTree.SubElement(self.parent, 'arg', attrib={'name': 'retCode', 'type': 'i', 'direction': 'out'})
             self.iface.append(self.parent)
@@ -93,5 +92,11 @@ class DBusIntrospectionVisitor(Visitor):
         if not host.info.mandatory: code = '(b%s)' % code
         return code
 
-    def xml(self):
-        return '%s\n%s' % (self.doctype, ElementTree.tostring(self.tree))
+    def xml(self, interface = None):
+        tree = self.tree
+        if interface is not None:
+            fullname = '%s.%s.%s' % (self.domain, self.provider, interface)
+            tree = self.tree.find("interface[@name='%s']" % fullname)
+            if tree is None:
+                raise RuntimeError('Unknown interface: %s' % interface)
+        return '%s\n%s' % (self.doctype, ElementTree.tostring(tree))
