@@ -5,12 +5,13 @@ from protocol.Argument import TypeArgument
 class DBusIntrospectionVisitor(Visitor):
     doctype = '<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">'
 
-    def __init__(self, provider, domain, path):
-        self.provider = provider
-        self.domain = '%s.%s' % (domain, self.provider)
+    def __init__(self, domain, path):
+        self.domain = domain
         self.tree = ElementTree.Element('node', attrib={'name': path})
         self.enums = []
         self.structs = {}
+        self.provider = None
+        self.interface = None
 
     def visitProtocol(self, host):
         print('Visit protocol')
@@ -18,9 +19,9 @@ class DBusIntrospectionVisitor(Visitor):
 
     def visitInterface(self, host):
         print('Visit interface %s' % host.info.name)
-        name = '%s.%s' % (self.domain, host.info.name)
-        self.interface = ElementTree.Element('interface', attrib={'name': name})
-        self.empty_interface = True
+        name = '%s.%s.%s' % (self.domain, self.provider, host.info.name)
+        self.iface = ElementTree.Element('interface', attrib={'name': name})
+        self.empty_iface = True
         return True
 
     def visitEnumeration(self, host):
@@ -34,28 +35,28 @@ class DBusIntrospectionVisitor(Visitor):
         self.structs[fullname] = ''
         return True
 
-    def appendInterface(self):
-        if self.empty_interface:
-            self.tree.append(self.interface)
-            self.empty_interface = False
+    def appendInterface(self, interface):
+        need = self.interface is None or self.interface == interface.name
+        if need and self.empty_iface:
+            self.tree.append(self.iface)
+            self.empty_iface = False
+        return need
 
     def visitSignal(self, host):
         print('Visit signal %s' % host.info.name)
-        need = host.info.provider == self.provider
+        need = host.info.provider == self.provider and self.appendInterface(host.info.interface)
         if need:
-            self.appendInterface()
             self.parent = ElementTree.Element('signal', attrib={'name': host.info.name})
-            self.interface.append(self.parent)
+            self.iface.append(self.parent)
         return need
 
     def visitMethod(self, host):
         print('Visit method %s' % host.request.name)
-        need = host.request.provider == self.provider
+        need = host.request.provider == self.provider and self.appendInterface(host.request.interface)
         if need:
-            self.appendInterface()
             self.parent = ElementTree.Element('method', attrib={'name': host.request.name})
             ElementTree.SubElement(self.parent, 'arg', attrib={'name': 'retCode', 'type': 'i', 'direction': 'out'})
-            self.interface.append(self.parent)
+            self.iface.append(self.parent)
         return need
 
     def prepareStruct(self, host):
