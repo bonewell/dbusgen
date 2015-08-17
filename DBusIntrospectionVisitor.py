@@ -11,13 +11,14 @@ class DBusIntrospectionVisitor(Visitor):
         self.tree = ElementTree.Element('node', attrib={'name': path})
         self.enums = []
         self.structs = {}
+        self.logs = False
 
     def visitProtocol(self, protocol):
-        print('Visit protocol')
+        if self.logs: print('Visit protocol')
         return True
 
     def visitInterface(self, iface):
-        print('Visit interface %s' % iface.name())
+        if self.logs: print('Visit interface %s' % iface.name())
         name = '%s.%s.%s' % (self.domain, self.provider, iface.name())
         self.iface = ElementTree.Element('interface', attrib={'name': name})
         self.empty_iface = True
@@ -25,12 +26,12 @@ class DBusIntrospectionVisitor(Visitor):
 
     def visitEnumeration(self, enum):
         fullname = '%s.%s' % (enum.interface(), enum.name())
-        print('Visit enumeration %s' % fullname)
+        if self.logs: print('Visit enumeration %s' % fullname)
         self.enums.append(fullname)
 
     def visitStructure(self, struct):
         fullname = '%s.%s' % (struct.interface(), struct.name())
-        print('Visit structure %s' % fullname)
+        if self.logs: print('Visit structure %s' % fullname)
         self.structs[fullname] = ''
         return True
 
@@ -40,7 +41,7 @@ class DBusIntrospectionVisitor(Visitor):
             self.empty_iface = False
 
     def visitSignal(self, signal):
-        print('Visit signal %s' % signal.name())
+        if self.logs: print('Visit signal %s' % signal.name())
         need = signal.provider() == self.provider
         if need:
             self.appendInterface()
@@ -49,7 +50,7 @@ class DBusIntrospectionVisitor(Visitor):
         return need
 
     def visitMethod(self, method):
-        print('Visit method %s' % method.name())
+        if self.logs: print('Visit method %s' % method.name())
         need = method.provider() == self.provider
         if need:
             self.appendInterface()
@@ -65,7 +66,7 @@ class DBusIntrospectionVisitor(Visitor):
         self.structs[fullname] += code
 
     def visitArgument(self, arg):
-        print('Visit argument %s' % arg.name())
+        if self.logs: print('Visit argument %s' % arg.name())
         if arg.isStruct():
             self.prepareStruct(arg)
         else:

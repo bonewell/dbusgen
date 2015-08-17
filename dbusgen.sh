@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 
 mode=$1
+old=$2
+ver=$3
 
+if [ "$old" == "old" ]; then
+    dir="output"
+    suffix="_old"
+else
+    dir="new_output"
+    suffix=""
+fi
 case "$mode" in
-    test) python make_for_test.py --infile QT_HMI_API.xml --outdir new_output ;;
-    test3) python3 make_for_test.py --infile QT_HMI_API.xml --outdir new_output ;;
-    desc) python make_message_descriptions.py --infile QT_HMI_API.xml --outdir output ;;
-    intro) python make_introspection_c.py --infile QT_HMI_API.xml --outdir output ;;
-    qml) python make_qml_dbus_qml.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
-    cpp) python make_qml_dbus_cpp.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
-    request) python make_request_to_sdl.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
-    response) python make_hmi_requests.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
-    notify) python make_notifications_qml.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
+    desc) python$ver make_message_descriptions"$suffix".py --infile QT_HMI_API.xml --outdir $dir ;;
+    intro) python$ver make_introspection_c"$suffix".py --infile QT_HMI_API.xml --outdir $dir ;;
+    qml) python$ver make_qml_dbus_qml"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    cpp) python$ver make_qml_dbus_cpp"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    request) python$ver make_request_to_sdl"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    response) python$ver make_hmi_requests"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    notify) python$ver make_notifications_qml"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
 esac
