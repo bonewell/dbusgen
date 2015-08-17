@@ -4,6 +4,9 @@ mode=$1
 old=$2
 ver=$3
 
+mkdir -p new_output
+mkdir -p output
+
 if [ "$old" == "old" ]; then
     dir="output"
     suffix="_old"
