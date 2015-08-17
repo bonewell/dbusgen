@@ -10,21 +10,18 @@ class Argument(Component):
         Component.__init__(self, adapter)
         self.info = info
         self.direction = direction
-        if not self.isBasic():
-            self.info.type = self.fulltype()
 
     def accept(self, v):
         v.visit(self)
 
     def fulltype(self):
         names = self.info.type.split('.')
-        if len(names) > 2:
+        if not self.info.type or len(names) > 2:
             raise RuntimeError('Wrong type format: %s' % self.info.type)
         elif len(names) > 1:
             return self.info.type
         else:
             fullname = '%s.%s' % (self.interface(), names[0])
-            print(fullname)
             return fullname
 
     def isBasic(self):
@@ -34,6 +31,8 @@ class Argument(Component):
         return self.info.name
 
     def type(self):
+        if not self.isBasic():
+            return self.fulltype()
         return self.info.type
 
     def interface(self):

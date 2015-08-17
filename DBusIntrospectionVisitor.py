@@ -54,7 +54,8 @@ class DBusIntrospectionVisitor(Visitor):
         if need:
             self.appendInterface()
             self.parent = ElementTree.Element('method', attrib={'name': method.name()})
-            ElementTree.SubElement(self.parent, 'arg', attrib={'name': 'retCode', 'type': 'i', 'direction': 'out'})
+            el = ElementTree.Element('arg', attrib={'name': 'retCode', 'type': 'i', 'direction': 'out'})
+            self.parent.append(el)
             self.iface.append(self.parent)
         return need
 
@@ -71,12 +72,13 @@ class DBusIntrospectionVisitor(Visitor):
             self.createArgument(arg)
 
     def createArgument(self, arg):
-        el = ElementTree.SubElement(self.parent, 'arg', attrib={'name': arg.name()})
+        el = ElementTree.Element('arg', attrib={'name': arg.name()})
         el.set('type', self.signature(arg))
         if arg.direction == TypeArgument.Input:
             el.set('direction', 'in')
         if arg.direction == TypeArgument.Output:
             el.set('direction', 'out')
+        self.parent.append(el)
 
     def signature(self, arg):
         if arg.type() == 'Integer': code = 'i'
