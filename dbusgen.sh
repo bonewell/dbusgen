@@ -3,8 +3,8 @@
 mode=$1
 
 case "$mode" in
-    test) python make_for_test.py --infile QT_HMI_API.xml ;;
-    test3) python3 make_for_test.py --infile QT_HMI_API.xml ;;
+    test) python make_for_test.py --infile QT_HMI_API.xml --outdir new_output ;;
+    test3) python3 make_for_test.py --infile QT_HMI_API.xml --outdir new_output ;;
     desc) python make_message_descriptions.py --infile QT_HMI_API.xml --outdir output ;;
     intro) python make_introspection_c.py --infile QT_HMI_API.xml --outdir output ;;
     qml) python make_qml_dbus_qml.py --infile QT_HMI_API.xml --version 5.1.0 --outdir output ;;
