@@ -1,33 +1,40 @@
-from protocol.Protocol import *
-from protocol.Interface import *
-from protocol.Signal import *
-from protocol.Method import *
-from protocol.Argument import *
-from protocol.Structure import *
-from protocol.Enumeration import *
-
 class Visitor(object):
+    def visit(self, host):
+        accepter = type(host).__name__
+        if accepter == 'Protocol':
+            return self.visitProtocol(host)
+        if accepter == 'Interface':
+            return self.visitInterface(host)
+        if accepter == 'Enumeration':
+            return self.visitEnumeration(host)
+        if accepter == 'Structure':
+            return self.visitStructure(host)
+        if accepter == 'Signal':
+            return self.visitSignal(host)
+        if accepter == 'Method':
+            return self.visitMethod(host)
+        if accepter == 'Argument':
+            return self.visitArgument(host)
+        print('Unkown accepter %s' % accepter)
+        return False
 
-    def visit(self, item):
+    def visitProtocol(self, protocol):
         pass
 
-    def visit(self, item):
+    def visitInterface(self, iface):
         pass
 
-    def visit(self, item):
+    def visitEnumeration(self, enum):
         pass
 
-    def visit(self, item):
+    def visitStructure(self, struct):
         pass
 
-    def visit(self, item):
+    def visitSignal(self, signal):
         pass
 
-    def visit(self, item):
+    def visitMethod(self, method):
         pass
 
-    def visit(self, item):
+    def visitArgument(self, arg):
         pass
-
-
-

@@ -9,7 +9,6 @@ from protocol.Structure import Structure
 from protocol.Method import Method
 from protocol.Signal import Signal
 from protocol.Protocol import Protocol
-
 from protocol.Visitor import Visitor
 
 class TestProtocol(TestCase):
@@ -26,6 +25,34 @@ class TestProtocol(TestCase):
         c.elements.append(i)
         c.process(v)
         i.accept.assert_called_once_with(v)
+
+    def test_argument_isBasic(self):
+        p = Mock()
+        # basic type
+        p.type = 'String'
+        a = Argument(None, p)
+        self.assertTrue(a.isBasic())
+        # not basic type
+        p.type = 'Image'
+        self.assertFalse(a.isBasic())
+
+    def test_argument_fulltype(self):
+        p = Mock()
+        a = Argument(None, p)
+        a.interface = Mock(return_value='Common')
+        # missed interface
+        p.type = 'Image'
+        self.assertEqual(a.fulltype(), 'Common.Image')
+        # full type
+        p.type = 'Common.Type1'
+        self.assertEqual(a.fulltype(), 'Common.Type1')
+        # error format
+        p.type = 'Common.Type2.Type3'
+        with self.assertRaises(RuntimeError):
+            a.fulltype()
+        p.type = ''
+        with self.assertRaises(RuntimeError):
+            a.fulltype()
 
     def test_argument_accept(self):
         v = Visitor()

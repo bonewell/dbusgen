@@ -18,3 +18,9 @@ class Method(Composite):
     def accept(self, v):
         if v.visit(self):
             self.process(v)
+
+    def name(self):
+        return self.request.name
+
+    def provider(self):
+        return self.request.provider

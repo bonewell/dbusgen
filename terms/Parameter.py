@@ -12,7 +12,7 @@ class Parameter(object):
             - string minvalue
             - string maxvalue
             - string defvalue
-            - bool is_structure
+            - bool is_structure TODO(KKolodiy): need to rename
             - object parent
     """
     pass
