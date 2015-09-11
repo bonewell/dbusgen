@@ -19,7 +19,7 @@ class XMLAdapter(Adapter):
 
     def interface(self, name):
         item = self.tree.find("interface[@name='%s']" % name)
-        if item is None:
+        if item == None:
             return None
         iface = Interface()
         iface.name = item.get('name')
@@ -38,12 +38,12 @@ class XMLAdapter(Adapter):
         return funcs
 
     def function(self, name, interface, type = None):
-        if type is None:
+        if type == None:
             query = "interface[@name='%s']/function[@name='%s']" % (interface.name, name)
         else:
             query = "interface[@name='%s']/function[@name='%s'][@messagetype='%s']" % (interface.name, name, type)
         item = self.tree.find(query)
-        if item is None:
+        if item == None:
             return None
         func = Function()
         func.name = item.get('name')
@@ -65,7 +65,7 @@ class XMLAdapter(Adapter):
     def structure(self, name, interface):
         query = "interface[@name='%s']/struct[@name='%s']" % (interface.name, name)
         item = self.tree.find(query)
-        if item is None:
+        if item == None:
             return None
         struct = Structure()
         struct.name = item.get('name')
@@ -80,7 +80,7 @@ class XMLAdapter(Adapter):
             el.name = item.get('name')
             el.internal_name = item.get('internal_name')
             value = item.get('value')
-            el.value = None if value is None else int(value)
+            el.value = None if value == None else int(value)
             els.append(el)
         return els
 
@@ -98,7 +98,7 @@ class XMLAdapter(Adapter):
     def enumeration(self, name, interface):
         query = "interface[@name='%s']/enum[@name='%s']" % (interface.name, name)
         item = self.tree.find(query)
-        if item is None:
+        if item == None:
             return None
         enum = Enumeration()
         enum.name = item.get('name')
@@ -140,14 +140,14 @@ class XMLAdapter(Adapter):
         mandatory = item.get('mandatory')
         param.mandatory = False if mandatory == 'false' else True
         minlength = item.get('minlength')
-        param.minlength = 0 if minlength is None else minlength
+        param.minlength = 0 if minlength == None else minlength
         param.maxlength = item.get('maxlength')
         param.minsize = item.get('minsize')
         param.maxsize = item.get('maxsize')
         is_array = item.get('array')
         param.is_array = True if is_array == 'true' else False
         minvalue = item.get('minvalue')
-        param.minvalue = 0 if minvalue is None else minvalue
+        param.minvalue = 0 if minvalue == None else minvalue
         param.maxvalue = item.get('maxvalue')
         param.defvalue = item.get('defvalue')
         return param

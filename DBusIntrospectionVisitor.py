@@ -95,9 +95,9 @@ class DBusIntrospectionVisitor(Visitor):
 
     def xml(self, interface = None):
         tree = self.tree
-        if interface is not None:
+        if interface != None:
             fullname = '%s.%s.%s' % (self.domain, self.provider, interface)
             tree = self.tree.find("interface[@name='%s']" % fullname)
-            if tree is None:
+            if tree == None:
                 raise RuntimeError('Unknown interface: %s' % interface)
         return '%s\n%s' % (self.doctype, ElementTree.tostring(tree))
