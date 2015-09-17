@@ -54,6 +54,8 @@ print("Read protocol: %s" % args.infile)
 introspection = DBusIntrospectionVisitor('sdl', 'com.ford.hmi', '/com/ford/hmi')
 #introspection.logs = True
 protocol.accept(introspection)
+if not path.isdir(args.outdir):
+    os.makedirs(args.outdir)
 filename = path.join(args.outdir, 'introspection_xml.cc')
 print("Write binary introspection: %s" % filename)
 binary = BinaryIntrospection(introspection)

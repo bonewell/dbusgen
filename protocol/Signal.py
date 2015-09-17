@@ -20,3 +20,6 @@ class Signal(Composite):
 
     def provider(self):
         return self.info.provider
+
+    def interface(self):
+        return self.info.interface.name

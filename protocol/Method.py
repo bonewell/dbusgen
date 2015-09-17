@@ -24,3 +24,6 @@ class Method(Composite):
 
     def provider(self):
         return self.request.provider
+
+    def interface(self):
+        return self.request.interface.name
