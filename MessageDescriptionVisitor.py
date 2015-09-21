@@ -12,16 +12,20 @@ class MessageDescriptionVisitor(Visitor):
     tpl_structs_member = "  static %(type)s* %(name)s__parameters[];\n"
 
     tpl_definition_structure = "%(type)s* Structs::%(name)s__parameters[] = {\n%(args)s  NULL };"
-    tpl_definition_structure_member = "  (%(type)s*)&%(name)s__parameter%(id)d,\n"
-    tpl_structure_parameter = "%(type)s %(name)s__parameter%(id)d = {\n%(info)s};\n"
+    tpl_structure_member = "  (%(type)s*)&%(name)s__parameter%(id)d,\n"
+    tpl_definition_structure_member = "%(type)s %(name)s__parameter%(id)d = {\n%(info)s};\n"
     tpl_parameter_info = '  "%(name)s",\n  %(type)s,\n  %(mandatory)s\n'
     tpl_parameter_array_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  %(array)s,\n  "%(introspection)s"\n'
     tpl_parameter_structure_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  Structs::%(struct)s__parameters\n'
     tpl_parameter_array = "%(type)s %(name)s__parameter%(id)d_array = {\n%(info)s};\n"
     tpl_parameter_array_item = "(%(type)s*)&%(name)s__parameter%(id)d_array"
 
+    tpl_definition_function = "%(type)s* %(name)s__%(kind)s__parameters[] = {\n%(args)s  NULL };\n"
+
     tpl_messages = "const MessageDescription* message_descriptions[] = {\n%s  NULL\n};"
     tpl_messages_member = "  &%(name)s__%(type)s,\n"
+    tpl_definition_message = "%(type)s %(name)s__%(kind)s = {\n%(info)s};\n"
+    tpl_message_info = '  "%(interface)s",\n  "%(nick)s",\n  hmi_apis::messageType::%(kind)s,\n  hmi_apis::FunctionID::%(type)s,\n  %(name)s__%(kind)s__parameters\n'
 
     def __init__(self, namespace):
         self.namespace = namespace
@@ -133,20 +137,42 @@ class MessageDescriptionVisitor(Visitor):
             return self.definition_signal(name)
         elif name in self.methods:
             return self.definition_method(name)
-        return ''
+        raise RuntimeError('Unknown name of data')
 
     def definition_structure(self, name):
-        return self.structure_parameters(name) + self.structure_array_parameters(name)
+        return self.structure_members(name, True) + self.structure_array_parameters(name)
 
-    def structure_parameters(self, name):
-        parameters = ''
+    def definition_signal(self, name):
+        return self.function_array_parameters(name, 'notification') + self.function_info(name, 'notification')
+
+    def definition_method(self, name):
+        return self.function_array_parameters(name, 'request') + self.function_array_parameters(name, 'response')
+
+    def function_info(self, name, kind):
+        info = self.function_description(name, kind)
+        data = {'type': self.type_message, 'name': "__".join(name), 'kind': kind, 'info': info}
+        return self.tpl_definition_message % data
+
+    def function_description(self, name, kind):
+        data = {'interface': name[0], 'nick': name[1], 'name': "__".join(name), 'kind': kind, 'type': "_".join(name)}
+        return self.tpl_message_info % data
+
+    def structure_members(self, name, definition=False):
+        desc = ''
         uid = 1
         for arg in self.structures[name]:
-            parameters += self.structure_parameter(name, arg, uid)
+            if definition:
+                desc += self.definition_structure_member(name, arg, uid)
+            else:
+                desc += self.structure_member(name, uid)
             uid += 1
-        return parameters
+        return desc
 
-    def structure_parameter(self, name, arg, uid):
+    def structure_member(self, name, uid):
+        data = {'type': self.type_parameter, 'name': "__".join(name), 'id': uid}
+        return self.tpl_structure_member % data
+
+    def definition_structure_member(self, name, arg, uid):
         desc = ''
         type_parameter = self.type_parameter
         info = self.parameter_info(name, arg, uid)
@@ -158,8 +184,12 @@ class MessageDescriptionVisitor(Visitor):
            type_parameter = self.type_structure
            info = self.parameter_structure_info(name, arg, uid)
         data = {'type': type_parameter, 'name': "__".join(name), 'id': uid, 'info': info}
-        desc += self.tpl_structure_parameter % data
+        desc += self.tpl_definition_structure_member % data
         return desc
+
+    def function_array_parameters(self, name, kind):
+        data = {'type': self.type_parameter, 'name': "__".join(name), 'kind': kind, 'args': ''}
+        return self.tpl_definition_function % data
 
     def parameter_info(self, name, arg, uid, mandatory=None):
         mandatory = 'true' if mandatory or arg.isMandatory() else 'false'
@@ -192,24 +222,6 @@ class MessageDescriptionVisitor(Visitor):
     def structure_array_parameters(self, name):
         data = {'type': self.type_parameter, 'name': "__".join(name), 'args': self.structure_members(name)}
         return self.tpl_definition_structure % data
-
-    def structure_members(self, name):
-        definition = ''
-        uid = 1
-        for arg in self.structures[name]:
-            definition += self.definition_structure_member(name, uid)
-            uid += 1
-        return definition
-
-    def definition_structure_member(self, name, uid):
-        data = {'type': self.type_parameter, 'name': "__".join(name), 'id': uid}
-        return self.tpl_definition_structure_member % data
-
-    def definition_signal(self, name):
-        return 'Notification'
-
-    def definition_method(self, name):
-        return 'Request, Response'
 
     def messages(self):
         return self.tpl_messages % self.messages_members()
