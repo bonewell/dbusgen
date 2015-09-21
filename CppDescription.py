@@ -1,27 +1,29 @@
+from __future__ import print_function
+import os
 from datetime import date
 from Header import CppWarning
 from Header import CppHeader
 
 class CppDescription(object):
-    include = "#include \"dbus/message_descriptions.h\"\n\n"
+    generator = os.path.basename(__file__)
+    include = "#include \"dbus/message_descriptions.h\""
 
     def __init__(self, desc):
         self.desc = desc
 
     def write(self, filename):
         fd = open(filename, 'w')
-        fd.write(CppWarning % "CppDescription.py")
-        fd.write(CppHeader % date.today().year)
-        fd.write(self.include)
+        os.sys.stdout = fd
+        print(CppWarning % self.generator)
+        print(CppHeader % date.today().year)
+        print(self.include, end="\n\n")
 
-        fd.write("namespace {\n\n")
-        fd.write(self.desc.structs())
-        fd.write("\n\n")
+        print("namespace {", end="\n\n")
+        print(self.desc.structs(), end="\n\n")
         for name in self.desc.names:
-            fd.write(self.desc.definition(name))
-            fd.write("\n\n")
-        fd.write("}\n\n")
+            print(self.desc.definition(name), end="\n\n")
+        print("}", end="\n\n")
 
         data = (self.desc.namespace, self.desc.messages())
-        fd.write("namespace %s {\n\n%s\n}\n\n" % data)
+        print("namespace %s {\n\n%s\n}" % data, end="\n\n")
         fd.close()

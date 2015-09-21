@@ -1,10 +1,12 @@
+from __future__ import print_function
+import os
 from datetime import date
 from Header import CppWarning
 from Header import CppHeader
 
 class BinaryIntrospection(object):
+    generator = os.path.basename(__file__)
     prefix = 'char introspection_xml[] = {'
-
     suffix = ' 0x00\n};'
 
     def __init__(self, dbus):
@@ -12,11 +14,12 @@ class BinaryIntrospection(object):
 
     def write(self, filename):
         fd = open(filename, 'w')
-        fd.write(CppWarning % "BinaryIntrospection.py")
-        fd.write(CppHeader % date.today().year)
-        fd.write(self.prefix)
-        fd.write(self.convert())
-        fd.write(self.suffix)
+        os.sys.stdout = fd
+        print(CppWarning % self.generator)
+        print(CppHeader % date.today().year)
+        print(self.prefix, end='')
+        print(self.convert(), end='')
+        print(self.suffix, end='')
         fd.close()
 
     def convert(self):
