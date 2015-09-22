@@ -14,15 +14,16 @@ class MessageDescriptionVisitor(Visitor):
     tpl_definition_structure = "%(type)s* Structs::%(name)s__parameters[] = {\n%(args)s  NULL };"
     tpl_structure_member = "  (%(type)s*)&%(name)s__parameter%(id)d,\n"
     tpl_definition_structure_member = "%(type)s %(name)s__parameter%(id)d = {\n%(info)s};\n"
+
+    tpl_definition_function = "%(type)s* %(name)s__%(kind)s__parameters[] = {\n%(args)s  NULL };\n"
+    tpl_function_member = "  (%(type)s*)&%(name)s__%(kind)s__parameter%(id)d,\n"
+    tpl_definition_function_member = "%(type)s %(name)s__%(kind)s__parameter%(id)d = {\n%(info)s};\n"
+
     tpl_parameter_info = '  "%(name)s",\n  %(type)s,\n  %(mandatory)s\n'
     tpl_parameter_array_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  %(array)s,\n  "%(introspection)s"\n'
     tpl_parameter_structure_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  Structs::%(struct)s__parameters\n'
     tpl_parameter_array = "%(type)s %(name)s__%(kind)sparameter%(id)d_array = {\n%(info)s};\n"
     tpl_parameter_array_item = "(%(type)s*)&%(name)s__%(kind)sparameter%(id)d_array"
-
-    tpl_definition_function = "%(type)s* %(name)s__%(kind)s__parameters[] = {\n%(args)s  NULL };\n"
-    tpl_function_member = "  (%(type)s*)&%(name)s__%(kind)s__parameter%(id)d,\n"
-    tpl_definition_function_member = "%(type)s %(name)s__%(kind)s__parameter%(id)d = {\n%(info)s};\n"
 
     tpl_messages = "const MessageDescription* message_descriptions[] = {\n%s  NULL\n};"
     tpl_messages_member = "  &%(name)s__%(type)s,\n"
@@ -74,7 +75,6 @@ class MessageDescriptionVisitor(Visitor):
         self.names.append(fullname)
         self.signals[(signal.interface(), signal.name())] = signal
         self.args[(signal.interface(), signal.name())] = []
-        self.index = 1
         return True
 
     def visitMethod(self, method):
@@ -83,7 +83,6 @@ class MessageDescriptionVisitor(Visitor):
         self.names.append(fullname)
         self.methods[(method.interface(), method.name())] = method
         self.args[(method.interface(), method.name())] = []
-        self.index = 1
         return True
 
     def prepareStruct(self, struct):
@@ -141,21 +140,31 @@ class MessageDescriptionVisitor(Visitor):
         raise RuntimeError('Unknown name of data')
 
     def definition_structure(self, name):
-        return self.structure_members(name, True) + self.structure_array_parameters(name)
+        return (self.structure_members(name, True) +
+        self.structure_array_parameters(name))
 
     def definition_signal(self, name):
-        return self.function_members(name, 'notification', True) + self.function_array_parameters(name, 'notification') + self.function_info(name, 'notification')
+        return (self.function_members(name, 'notification', True) +
+        self.function_array_parameters(name, 'notification') +
+        self.function_info(name, 'notification'))
 
     def definition_method(self, name):
-        return self.function_members(name, 'request', True) + self.function_array_parameters(name, 'request') + self.function_info(name, 'request') + '\n\n' + self.function_members(name, 'response', True) + self.function_array_parameters(name, 'response') + self.function_info(name, 'response')
+        return (self.function_members(name, 'request', True) +
+        self.function_array_parameters(name, 'request') +
+        self.function_info(name, 'request') + '\n\n' +
+        self.function_members(name, 'response', True) +
+        self.function_array_parameters(name, 'response') +
+        self.function_info(name, 'response'))
 
     def function_info(self, name, kind):
         info = self.function_description(name, kind)
-        data = {'type': self.type_message, 'name': "__".join(name), 'kind': kind, 'info': info}
+        data = {'type': self.type_message, 'name': "__".join(name),
+        'kind': kind, 'info': info}
         return self.tpl_definition_message % data
 
     def function_description(self, name, kind):
-        data = {'interface': name[0], 'nick': name[1], 'name': "__".join(name), 'kind': kind, 'type': "_".join(name)}
+        data = {'interface': name[0], 'nick': name[1], 'name': "__".join(name),
+        'kind': kind, 'type': "_".join(name)}
         return self.tpl_message_info % data
 
     def structure_members(self, name, definition=False):
@@ -232,7 +241,8 @@ class MessageDescriptionVisitor(Visitor):
 
     def parameter_array_info(self, name, arg, uid, kind=''):
         mandatory = 'true' if arg.isMandatory() else 'false'
-        data = {'name': arg.name(), 'type': self.fulltype(arg), 'mandatory': mandatory, 'array': self.parameter_array_item(name, arg, uid, kind), 'introspection': self.signature(arg, True)}
+        data = {'name': arg.name(), 'type': self.fulltype(arg), 'mandatory': mandatory,
+        'array': self.parameter_array_item(name, arg, uid, kind), 'introspection': self.signature(arg, True)}
         return self.tpl_parameter_array_info % data
 
     def parameter_array_item(self, name, arg, uid, kind=''):
@@ -242,7 +252,8 @@ class MessageDescriptionVisitor(Visitor):
 
     def parameter_structure_info(self, name, arg, uid, mandatory=None):
         mandatory = 'true' if mandatory or arg.isMandatory() else 'false'
-        data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory, 'struct': arg.type().replace('.', "__")}
+        data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory,
+        'struct': arg.type().replace('.', "__")}
         return self.tpl_parameter_structure_info % data
 
     def parameter_array(self, name, arg, uid, kind=''):

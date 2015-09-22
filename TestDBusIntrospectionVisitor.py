@@ -125,7 +125,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         dbus.createArgument(a)
         a.name.assert_called_once_with()
         dbus.signature.assert_called_once_with(a)
-        self.assertEqual(ElementTree.tostring(dbus.parent[0]), b'<arg direction="in" name="Param" type="b" />')
+        self.assertEqual(ElementTree.tostring(dbus.parent[0]),
+        b'<arg direction="in" name="Param" type="b" />')
         # Output
         dbus.parent = []
         dbus.signature = Mock(return_value='b')
@@ -134,7 +135,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         dbus.createArgument(a)
         a.name.assert_called_once_with()
         dbus.signature.assert_called_once_with(a)
-        self.assertEqual(ElementTree.tostring(dbus.parent[0]), b'<arg direction="out" name="Param" type="b" />')
+        self.assertEqual(ElementTree.tostring(dbus.parent[0]),
+        b'<arg direction="out" name="Param" type="b" />')
         # Undefined
         dbus.parent = []
         dbus.signature = Mock(return_value='b')
@@ -143,7 +145,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         dbus.createArgument(a)
         a.name.assert_called_once_with()
         dbus.signature.assert_called_once_with(a)
-        self.assertEqual(ElementTree.tostring(dbus.parent[0]), b'<arg name="Param" type="b" />')
+        self.assertEqual(ElementTree.tostring(dbus.parent[0]),
+        b'<arg name="Param" type="b" />')
 
     def test_appendInterface(self):
         dbus = DBusIntrospectionVisitor(None, None, None)
@@ -173,7 +176,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         self.assertTrue(dbus.visitInterface(i))
         i.name.assert_called_with()
         self.assertTrue(dbus.empty_iface)
-        self.assertEqual(ElementTree.tostring(dbus.iface), b'<interface name="com.sdl.sdl.I" />')
+        self.assertEqual(ElementTree.tostring(dbus.iface),
+        b'<interface name="com.sdl.sdl.I" />')
 
     def test_visitEnumeration(self):
         dbus = DBusIntrospectionVisitor(None, None, None)
@@ -237,7 +241,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         m.name.assert_called_with()
         dbus.appendInterface.assert_called_once_with()
         dbus.iface.append.assert_called_once_with(dbus.parent)
-        self.assertEqual(ElementTree.tostring(dbus.parent), b'<method name="M"><arg direction="out" name="retCode" type="i" /></method>')
+        self.assertEqual(ElementTree.tostring(dbus.parent),
+        b'<method name="M"><arg direction="out" name="retCode" type="i" /></method>')
 
     def test_visitArgument(self):
         dbus = DBusIntrospectionVisitor(None, None, None)
@@ -318,7 +323,11 @@ class TestDBusIntrospectionVisitor(TestCase):
         a3.isArray = Mock(return_value=False)
         a3.isMandatory = Mock(return_value=False)
         dbus.visitArgument(a3)
-        doctype = '<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">'
-        xml = b'<node name="/com/sdl"><interface name="com.sdl.sdl.I"><signal name="S"><arg name="arg1" type="s" /><arg name="arg2" type="ai" /></signal><method name="M"><arg direction="out" name="retCode" type="i" /><arg direction="in" name="arg3" type="(b(ds))" /></method></interface></node>'
+        doctype = ('<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"'
+        +' "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">')
+        xml = (b'<node name="/com/sdl"><interface name="com.sdl.sdl.I"><signal name="S">'
+        + b'<arg name="arg1" type="s" /><arg name="arg2" type="ai" /></signal><method name="M">'
+        + b'<arg direction="out" name="retCode" type="i" /><arg direction="in" name="arg3" type="(b(ds))" />'
+        + b'</method></interface></node>')
         expect = '%s\n%s' % (doctype, xml)
         self.assertEqual(dbus.xml(), expect) 

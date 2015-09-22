@@ -3,7 +3,8 @@ from protocol.Visitor import Visitor
 from protocol.Argument import TypeArgument
 
 class DBusIntrospectionVisitor(Visitor):
-    doctype = '<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">'
+    doctype = ('<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"'
+    + ' "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">')
 
     def __init__(self, provider, domain, path):
         self.provider = provider
