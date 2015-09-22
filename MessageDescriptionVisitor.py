@@ -17,14 +17,16 @@ class MessageDescriptionVisitor(Visitor):
     tpl_parameter_info = '  "%(name)s",\n  %(type)s,\n  %(mandatory)s\n'
     tpl_parameter_array_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  %(array)s,\n  "%(introspection)s"\n'
     tpl_parameter_structure_info = '  {\n    "%(name)s",\n    %(type)s,\n    %(mandatory)s\n  },\n  Structs::%(struct)s__parameters\n'
-    tpl_parameter_array = "%(type)s %(name)s__parameter%(id)d_array = {\n%(info)s};\n"
-    tpl_parameter_array_item = "(%(type)s*)&%(name)s__parameter%(id)d_array"
+    tpl_parameter_array = "%(type)s %(name)s__%(kind)sparameter%(id)d_array = {\n%(info)s};\n"
+    tpl_parameter_array_item = "(%(type)s*)&%(name)s__%(kind)sparameter%(id)d_array"
 
     tpl_definition_function = "%(type)s* %(name)s__%(kind)s__parameters[] = {\n%(args)s  NULL };\n"
+    tpl_function_member = "  (%(type)s*)&%(name)s__%(kind)s__parameter%(id)d,\n"
+    tpl_definition_function_member = "%(type)s %(name)s__%(kind)s__parameter%(id)d = {\n%(info)s};\n"
 
     tpl_messages = "const MessageDescription* message_descriptions[] = {\n%s  NULL\n};"
     tpl_messages_member = "  &%(name)s__%(type)s,\n"
-    tpl_definition_message = "%(type)s %(name)s__%(kind)s = {\n%(info)s};\n"
+    tpl_definition_message = "%(type)s %(name)s__%(kind)s = {\n%(info)s};"
     tpl_message_info = '  "%(interface)s",\n  "%(nick)s",\n  hmi_apis::messageType::%(kind)s,\n  hmi_apis::FunctionID::%(type)s,\n  %(name)s__%(kind)s__parameters\n'
 
     def __init__(self, namespace):
@@ -98,8 +100,7 @@ class MessageDescriptionVisitor(Visitor):
             self.createArgument(arg)
 
     def createArgument(self, arg):
-        self.args[(arg.interface(), arg.parent())].append({'id': self.index, 'arg': arg})
-        self.index += 1
+        self.args[(arg.interface(), arg.parent())].append(arg)
 
     def signature(self, arg, array=False):
         if arg.type() == 'Integer': code = 'i'
@@ -143,10 +144,10 @@ class MessageDescriptionVisitor(Visitor):
         return self.structure_members(name, True) + self.structure_array_parameters(name)
 
     def definition_signal(self, name):
-        return self.function_array_parameters(name, 'notification') + self.function_info(name, 'notification')
+        return self.function_members(name, 'notification', True) + self.function_array_parameters(name, 'notification') + self.function_info(name, 'notification')
 
     def definition_method(self, name):
-        return self.function_array_parameters(name, 'request') + self.function_array_parameters(name, 'response')
+        return self.function_members(name, 'request', True) + self.function_array_parameters(name, 'request') + self.function_info(name, 'request') + '\n\n' + self.function_members(name, 'response', True) + self.function_array_parameters(name, 'response') + self.function_info(name, 'response')
 
     def function_info(self, name, kind):
         info = self.function_description(name, kind)
@@ -188,21 +189,55 @@ class MessageDescriptionVisitor(Visitor):
         return desc
 
     def function_array_parameters(self, name, kind):
-        data = {'type': self.type_parameter, 'name': "__".join(name), 'kind': kind, 'args': ''}
+        args = self.function_members(name, kind)
+        data = {'type': self.type_parameter, 'name': "__".join(name), 'kind': kind, 'args': args}
         return self.tpl_definition_function % data
+
+    def function_members(self, name, kind, definition=False):
+        desc = ''
+        uid = 1
+        for arg in self.args[name]:
+            if kind == 'request' and arg.direction != TypeArgument.Input: continue
+            if kind == 'response' and arg.direction != TypeArgument.Output: continue
+            if definition:
+                desc += self.definition_function_member(name, arg, kind, uid)
+            else:
+                desc += self.function_member(name, kind, uid)
+            uid += 1
+        return desc
+
+    def function_member(self, name, kind, uid):
+        data = {'type': self.type_parameter, 'name': "__".join(name), 'kind': kind, 'id': uid}
+        return self.tpl_function_member % data
+
+    def definition_function_member(self, name, arg, kind, uid):
+        desc = ''
+        type_parameter = self.type_parameter
+        info = self.parameter_info(name, arg, uid)
+        if arg.isArray():
+           desc += self.parameter_array(name, arg, uid, kind)
+           type_parameter = self.type_array
+           info = self.parameter_array_info(name, arg, uid, kind)
+        elif arg.type() in self.signatures:
+           type_parameter = self.type_structure
+           info = self.parameter_structure_info(name, arg, uid)
+        data = {'type': type_parameter, 'name': "__".join(name), 'kind': kind, 'id': uid, 'info': info}
+        desc += self.tpl_definition_function_member % data
+        return desc
 
     def parameter_info(self, name, arg, uid, mandatory=None):
         mandatory = 'true' if mandatory or arg.isMandatory() else 'false'
         data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory}
         return self.tpl_parameter_info % data
 
-    def parameter_array_info(self, name, arg, uid):
+    def parameter_array_info(self, name, arg, uid, kind=''):
         mandatory = 'true' if arg.isMandatory() else 'false'
-        data = {'name': arg.name(), 'type': self.fulltype(arg), 'mandatory': mandatory, 'array': self.parameter_array_item(name, arg, uid), 'introspection': self.signature(arg, True)}
+        data = {'name': arg.name(), 'type': self.fulltype(arg), 'mandatory': mandatory, 'array': self.parameter_array_item(name, arg, uid, kind), 'introspection': self.signature(arg, True)}
         return self.tpl_parameter_array_info % data
 
-    def parameter_array_item(self, name, arg, uid):
-        data = {'type': self.type_parameter, 'name': "__".join(name), 'id': uid}
+    def parameter_array_item(self, name, arg, uid, kind=''):
+        if kind != '': kind += '__'
+        data = {'type': self.type_parameter, 'name': "__".join(name), 'id': uid, 'kind': kind}
         return self.tpl_parameter_array_item % data
 
     def parameter_structure_info(self, name, arg, uid, mandatory=None):
@@ -210,13 +245,14 @@ class MessageDescriptionVisitor(Visitor):
         data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory, 'struct': arg.type().replace('.', "__")}
         return self.tpl_parameter_structure_info % data
 
-    def parameter_array(self, name, arg, uid):
+    def parameter_array(self, name, arg, uid, kind=''):
+        if kind != '': kind += '__'
         type_parameter = self.type_parameter
         info = self.parameter_info(name, arg, uid, True)
         if arg.type() in self.signatures:
             type_parameter = self.type_structure
             info = self.parameter_structure_info(name, arg, uid, True)
-        data = {'type': type_parameter, 'name': "__".join(name), 'id': uid, 'info': info}
+        data = {'type': type_parameter, 'name': "__".join(name), 'id': uid, 'info': info, 'kind': kind}
         return self.tpl_parameter_array % data
 
     def structure_array_parameters(self, name):
