@@ -1,10 +1,3 @@
-from terms.Interface import Interface
-from terms.Function import Function
-from terms.Structure import Structure
-from terms.Parameter import Parameter
-from terms.Enumeration import Enumeration
-from terms.EnumerationElement import EnumerationElement
-
 class Adapter(object):
 
     def interfaces(self):

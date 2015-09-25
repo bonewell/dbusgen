@@ -1,4 +1,4 @@
-from protocol.Component import Component
+from .component import Component
 
 class TypeArgument:
     Undefined = 0
@@ -10,6 +10,8 @@ class Argument(Component):
         Component.__init__(self, adapter)
         self.info = info
         self.direction = direction
+        self.of_structure = False
+        self.is_structure = False
 
     def accept(self, v):
         v.visit(self)
@@ -25,7 +27,7 @@ class Argument(Component):
             return fullname
 
     def isBasic(self):
-        return self.info.type in ['Integer', 'String', 'Boolean', 'Float']
+        return self.info.type in ('Integer', 'String', 'Boolean', 'Float')
 
     def name(self):
         return self.info.name
@@ -42,10 +44,13 @@ class Argument(Component):
         return self.info.parent.name
 
     def isStruct(self):
-        return self.info.is_structure
+        return self.is_structure
 
     def isArray(self):
         return self.info.is_array
 
     def isMandatory(self):
         return self.info.mandatory
+
+    def ofStruct(self):
+        return self.of_structure

@@ -1,15 +1,8 @@
 from unittest import TestCase
-from unittest.mock import Mock
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 from xml.etree import ElementTree
 from DBusIntrospectionVisitor import DBusIntrospectionVisitor
-from protocol.Argument import Argument
-from protocol.Argument import TypeArgument
-from protocol.Structure import Structure
-from protocol.Enumeration import Enumeration
-from protocol.Signal import Signal
-from protocol.Method import Method
-from protocol.Interface import Interface
+from protocol import *
 
 class TestDBusIntrospectionVisitor(TestCase):
     def test_xml(self):

@@ -1,15 +1,7 @@
 from unittest import TestCase
 from unittest.mock import Mock
-from terms.Adapter import Adapter
-from protocol.Composite import Composite
-from protocol.Interface import Interface
-from protocol.Argument import Argument
-from protocol.Enumeration import Enumeration
-from protocol.Structure import Structure
-from protocol.Method import Method
-from protocol.Signal import Signal
-from protocol.Protocol import Protocol
-from protocol.Visitor import Visitor
+from adapter import Adapter
+from protocol import *
 
 class TestProtocol(TestCase):
     def test_composite_process(self):

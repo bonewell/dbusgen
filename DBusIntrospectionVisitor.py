@@ -1,6 +1,5 @@
 from xml.etree import ElementTree
-from protocol.Visitor import Visitor
-from protocol.Argument import TypeArgument
+from protocol import Visitor, TypeArgument
 
 class DBusIntrospectionVisitor(Visitor):
     doctype = ('<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"'
@@ -68,7 +67,7 @@ class DBusIntrospectionVisitor(Visitor):
 
     def visitArgument(self, arg):
         if self.logs: print('Visit argument %s' % arg.name())
-        if arg.isStruct():
+        if arg.ofStruct():
             self.prepareStruct(arg)
         else:
             self.createArgument(arg)

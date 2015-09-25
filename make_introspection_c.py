@@ -38,8 +38,8 @@
 
 from argparse import ArgumentParser
 from os import path
-from XMLAdapter import XMLAdapter
-from protocol.Protocol import Protocol
+from xmladapter import XMLAdapter
+from protocol import Protocol
 from DBusIntrospectionVisitor import DBusIntrospectionVisitor
 from BinaryIntrospection import BinaryIntrospection
 

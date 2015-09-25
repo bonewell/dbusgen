@@ -1,5 +1,6 @@
 from xml.etree import ElementTree
-from terms.Adapter import *
+from adapter import Adapter
+from terms import *
 
 class XMLAdapter(Adapter):
     def __init__(self, filename):
@@ -106,32 +107,21 @@ class XMLAdapter(Adapter):
         enum.elements = self.elements(interface, enum)
         return enum
 
-    def parameters(self, parent):
-        if type(parent).__name__ == 'Structure':
-            return self.structureParameters(parent)
-        if type(parent).__name__ == 'Function':
-            return self.functionParameters(parent)
-        return None
+    def parameters(self, query, parent):
+        params = []
+        for item in self.tree.findall(query):
+            param = self.createParameter(item)
+            param.parent = parent
+            params.append(param)
+        return params
 
     def functionParameters(self, func):
-        params = []
         query = "interface[@name='%s']/function[@name='%s'][@messagetype='%s']/param" % (func.interface.name, func.name, func.type)
-        for item in self.tree.findall(query):
-            param = self.createParameter(item)
-            param.is_structure = False
-            param.parent = func
-            params.append(param)
-        return params
+        return self.parameters(query, func)
 
     def structureParameters(self, struct):
-        params = []
         query = "interface[@name='%s']/struct[@name='%s']/param" % (struct.interface.name, struct.name)
-        for item in self.tree.findall(query):
-            param = self.createParameter(item)
-            param.is_structure = True
-            param.parent = struct
-            params.append(param)
-        return params
+        return self.parameters(query, struct)
 
     def createParameter(self, item):
         param = Parameter()

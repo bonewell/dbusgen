@@ -1,6 +1,5 @@
 from collections import OrderedDict
-from protocol.Visitor import Visitor
-from protocol.Argument import TypeArgument
+from protocol import Visitor, TypeArgument
 
 class MessageDescriptionVisitor(Visitor):
     tpl_type_message = "const %s::MessageDescription"
@@ -101,7 +100,7 @@ class MessageDescriptionVisitor(Visitor):
     def createArgument(self, arg):
         self.args[(arg.interface(), arg.parent())].append(arg)
 
-    def signature(self, arg, array=False):
+    def arraySignature(self, arg):
         if arg.type() == 'Integer': code = 'i'
         elif arg.type() == 'String': code = 's'
         elif arg.type() == 'Boolean': code = 'b'
@@ -109,16 +108,29 @@ class MessageDescriptionVisitor(Visitor):
         elif arg.type() in self.enums: code = 'i'
         elif arg.type() in self.signatures: code = '(%s)' % self.signatures[arg.type()]
         else: raise RuntimeError('Unknown type: %s' % arg.type())
-        if not array and arg.isArray(): code = 'a%s' % code
-        if not array and not arg.isMandatory(): code = '(b%s)' % code
         return code
 
-    def fulltype(self, arg, array=False):
-        if not array and arg.isArray(): code = 'Array'
-        elif arg.type() in self.enums: code = 'Enum'
-        elif arg.type() in self.signatures: code = 'Struct'
-        else: code = arg.type()
-        return '%s::%s' % (self.namespace, code)
+    def signature(self, arg):
+        code = arraySignature(arg)
+        if arg.isArray(): code = 'a%s' % code
+        if arg.isMandatory(): code = '(b%s)' % code
+        return code
+
+    def arrayType(self, arg):
+        code = arg.type()
+        if code in ('Integer', 'String', 'Boolean', 'Float'):
+            return '%s::%s' % (self.namespace, code)
+        if code in self.enums:
+            return '%s::Enum' % self.namespace
+        if code in self.signatures:
+            return '%s::Struct' % self.namespace
+        raise RuntimeError('Unknown type: %s' % code)
+
+    def fulltype(self, arg):
+        if arg.isArray(): 
+           return '%s::Array' % self.namespace
+        else:
+           return self.arrayType(arg)
 
     def structs(self):
         return self.tpl_structs % self.structs_members()
@@ -169,13 +181,11 @@ class MessageDescriptionVisitor(Visitor):
 
     def structure_members(self, name, definition=False):
         desc = ''
-        uid = 1
-        for arg in self.structures[name]:
+        for uid, arg in enumerate(self.structures[name]):
             if definition:
-                desc += self.definition_structure_member(name, arg, uid)
+                desc += self.definition_structure_member(name, arg, uid + 1)
             else:
-                desc += self.structure_member(name, uid)
-            uid += 1
+                desc += self.structure_member(name, uid + 1)
         return desc
 
     def structure_member(self, name, uid):
@@ -204,15 +214,13 @@ class MessageDescriptionVisitor(Visitor):
 
     def function_members(self, name, kind, definition=False):
         desc = ''
-        uid = 1
-        for arg in self.args[name]:
+        for uid, arg in enumerate(self.args[name]):
             if kind == 'request' and arg.direction != TypeArgument.Input: continue
             if kind == 'response' and arg.direction != TypeArgument.Output: continue
             if definition:
-                desc += self.definition_function_member(name, arg, kind, uid)
+                desc += self.definition_function_member(name, arg, kind, uid + 1)
             else:
-                desc += self.function_member(name, kind, uid)
-            uid += 1
+                desc += self.function_member(name, kind, uid + 1)
         return desc
 
     def function_member(self, name, kind, uid):
@@ -236,13 +244,13 @@ class MessageDescriptionVisitor(Visitor):
 
     def parameter_info(self, name, arg, uid, mandatory=None):
         mandatory = 'true' if mandatory or arg.isMandatory() else 'false'
-        data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory}
+        data = {'name': arg.name(), 'type': self.arrayType(arg), 'mandatory': mandatory}
         return self.tpl_parameter_info % data
 
     def parameter_array_info(self, name, arg, uid, kind=''):
         mandatory = 'true' if arg.isMandatory() else 'false'
         data = {'name': arg.name(), 'type': self.fulltype(arg), 'mandatory': mandatory,
-        'array': self.parameter_array_item(name, arg, uid, kind), 'introspection': self.signature(arg, True)}
+        'array': self.parameter_array_item(name, arg, uid, kind), 'introspection': self.arraySignature(arg)}
         return self.tpl_parameter_array_info % data
 
     def parameter_array_item(self, name, arg, uid, kind=''):
@@ -252,7 +260,7 @@ class MessageDescriptionVisitor(Visitor):
 
     def parameter_structure_info(self, name, arg, uid, mandatory=None):
         mandatory = 'true' if mandatory or arg.isMandatory() else 'false'
-        data = {'name': arg.name(), 'type': self.fulltype(arg, True), 'mandatory': mandatory,
+        data = {'name': arg.name(), 'type': self.arrayType(arg), 'mandatory': mandatory,
         'struct': arg.type().replace('.', "__")}
         return self.tpl_parameter_structure_info % data
 
