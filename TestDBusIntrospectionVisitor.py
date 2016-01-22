@@ -187,7 +187,10 @@ class TestDBusIntrospectionVisitor(TestCase):
     def test_visitStructure(self):
         dbus = DBusIntrospectionVisitor(None, None, None)
         dbus.structs = {}
-        s = Structure(None, None)
+        i = Mock()
+        i.name = 'St'
+        i.interface.name = 'I'
+        s = Structure(None, i)
         s.interface = Mock(return_value='I')
         s.name = Mock(return_value='St')
         self.assertTrue(dbus.visitStructure(s))
@@ -244,18 +247,17 @@ class TestDBusIntrospectionVisitor(TestCase):
         a = Argument(None, None)
         a.name = Mock(return_value='Name')
         # argument is contained in Structure
-        a.isStruct = Mock(return_value=True)
+        a.ofStruct = Mock(return_value=True)
         dbus.visitArgument(a)
-        a.isStruct.assert_called_once_with()
+        a.ofStruct.assert_called_once_with()
         dbus.prepareStruct.assert_called_once_with(a)
         # argument is contained in Signal or Method
-        a.isStruct = Mock(return_value=False)
+        a.ofStruct = Mock(return_value=False)
         dbus.visitArgument(a)
-        a.isStruct.assert_called_once_with()
+        a.ofStruct.assert_called_once_with()
         dbus.createArgument.assert_called_once_with(a)
 
     def test_visit(self):
-        self.maxDiff = None
         dbus = DBusIntrospectionVisitor('sdl', 'com.sdl', '/com/sdl')
         dbus.visitProtocol(None)
         i = Interface(None, None)
@@ -265,13 +267,17 @@ class TestDBusIntrospectionVisitor(TestCase):
         e.name = Mock(return_value='E')
         e.interface = Mock(return_value='I')
         dbus.visitEnumeration(e)
-        s = Structure(None, None)
+        info = Mock()
+        info.name = 'S'
+        info.interface.name = 'I'
+        s = Structure(None, info)
         s.name = Mock(return_value='S')
         s.interface = Mock(return_value='I')
         dbus.visitStructure(s)
         a01 = Argument(None, None)
         a01.name = Mock(return_value='a01')
-        a01.isStruct = Mock(return_value=True)
+        a01.ofStruct = Mock(return_value=True)
+        a01.isStruct = Mock(return_value=False)
         a01.interface = Mock(return_value='I')
         a01.parent = Mock(return_value='S')
         a01.type = Mock(return_value='Float')
@@ -280,7 +286,8 @@ class TestDBusIntrospectionVisitor(TestCase):
         dbus.visitArgument(a01)
         a02 = Argument(None, None)
         a02.name = Mock(return_value='a02')
-        a02.isStruct = Mock(return_value=True)
+        a02.ofStruct = Mock(return_value=True)
+        a02.isStruct = Mock(return_value=False)
         a02.interface = Mock(return_value='I')
         a02.parent = Mock(return_value='S')
         a02.type = Mock(return_value='String')

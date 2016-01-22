@@ -18,8 +18,10 @@ class Adapter(object):
     def structure(self, name, interface):
         pass
 
-    def parameters(self, parent):
-        """ parent is Structure or Function"""
+    def functionParameters(self, func):
+        pass
+
+    def structureParameters(self, struct):
         pass
 
     def enumerations(self, interface):

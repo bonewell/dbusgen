@@ -12,10 +12,10 @@ class Interface(Composite):
     def load(self):
         for x in self.adapter.enumerations(self.info):
             self.elements.append(Enumeration(self.adapter, x))
-        
+
         for x in self.adapter.structures(self.info):
             self.elements.append(Structure(self.adapter, x))
-        
+
         requests = []
         responses = {}
         for x in self.adapter.functions(self.info):

@@ -85,7 +85,11 @@ class TestProtocol(TestCase):
     def test_interface_load(self):
         a = Adapter()
         a.enumerations = Mock(return_value=[1, 2])
-        a.structures = Mock(return_value=[1])
+        s1 = Mock()
+        s1.name = 'name'
+        s1.interface = Mock()
+        s1.interface.name = 'name'
+        a.structures = Mock(return_value=[s1])
         f1 = Mock()
         f1.type = 'notification'
         f2 = Mock()
@@ -118,15 +122,30 @@ class TestProtocol(TestCase):
 
     def test_structure_load(self):
         a = Adapter()
-        a.parameters = Mock(return_value=[1, 2, 3])
-        s = Structure(a, None)
+        p1 = Mock()
+        p1.type = 'Integer'
+        p2 = Mock()
+        p2.type = 'Boolean'
+        p3 = Mock()
+        p3.type = 'Interface2.Struct2'
+        a.structureParameters = Mock(return_value=[p1, p2, p3])
+        i = Mock()
+        i.name = 'Struct1'
+        i.interface = Mock()
+        i.interface.name = 'Interface1'
+        Structure.structures = { 'Interface2.Struct2': None }
+        s = Structure(a, i)
         s.load()
-        a.parameters.assert_called_once_with(None)
+        a.structureParameters.assert_called_once_with(i)
         self.assertEqual(len(s.elements), 3)
 
     def test_structure_accept(self):
         v = Visitor()
-        s = Structure(None, None)
+        i = Mock()
+        i.name = 'name'
+        i.interface = Mock()
+        i.interface.name = 'name'
+        s = Structure(None, i)
         s.process = Mock()
         # not interesting way
         v.visit = Mock(return_value=False)
@@ -140,10 +159,10 @@ class TestProtocol(TestCase):
 
     def test_signal_load(self):
         a = Adapter()
-        a.parameters = Mock(return_value=[1, 2, 3])
+        a.functionParameters = Mock(return_value=[1, 2, 3])
         s = Signal(a, None)
         s.load()
-        a.parameters.assert_called_once_with(None)
+        a.functionParameters.assert_called_once_with(None)
         self.assertEqual(len(s.elements), 3)
 
     def test_signal_accept(self):
@@ -162,11 +181,11 @@ class TestProtocol(TestCase):
 
     def test_method_load(self):
         a = Adapter()
-        a.parameters = Mock(side_effect=[[1, 2, 3], [4, 5]])
+        a.functionParameters = Mock(side_effect=[[1, 2, 3], [4, 5]])
         m = Method(a, None, None)
         m.load()
-        a.parameters.assert_called_with(None)
-        self.assertEqual(a.parameters.call_count, 2)
+        a.functionParameters.assert_called_with(None)
+        self.assertEqual(a.functionParameters.call_count, 2)
         self.assertEqual(len(m.elements), 5)
 
     def test_method_accept(self):
