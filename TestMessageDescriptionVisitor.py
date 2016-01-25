@@ -1,14 +1,7 @@
 from unittest import TestCase
-from unittest.mock import Mock
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 from MessageDescriptionVisitor import MessageDescriptionVisitor
-from protocol.Argument import Argument
-from protocol.Argument import TypeArgument
-from protocol.Structure import Structure
-from protocol.Enumeration import Enumeration
-from protocol.Signal import Signal
-from protocol.Method import Method
-from protocol.Interface import Interface
+from protocol import *
 
 class TestMessageDescriptionVisitor(TestCase):
     def test_doTypes(self):
@@ -64,7 +57,7 @@ class TestMessageDescriptionVisitor(TestCase):
 
     def test_arraySignature(self):
         msgs = MessageDescriptionVisitor('NameSpace')
-        msgs.arraySignature()
+#        msgs.arraySignature()
 
     def test_visitEnumeration(self):
         msgs = MessageDescriptionVisitor('NameSpace')

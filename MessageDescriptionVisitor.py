@@ -92,7 +92,7 @@ class MessageDescriptionVisitor(Visitor):
 
     def visitArgument(self, arg):
         if self.logs: print('Visit argument %s' % arg.name())
-        if arg.isStruct():
+        if arg.ofStruct():
             self.prepareStruct(arg)
         else:
             self.createArgument(arg)
@@ -111,9 +111,9 @@ class MessageDescriptionVisitor(Visitor):
         return code
 
     def signature(self, arg):
-        code = arraySignature(arg)
+        code = self.arraySignature(arg)
         if arg.isArray(): code = 'a%s' % code
-        if arg.isMandatory(): code = '(b%s)' % code
+        if not arg.isMandatory(): code = '(b%s)' % code
         return code
 
     def arrayType(self, arg):
@@ -214,13 +214,15 @@ class MessageDescriptionVisitor(Visitor):
 
     def function_members(self, name, kind, definition=False):
         desc = ''
-        for uid, arg in enumerate(self.args[name]):
+        uid = 1
+        for arg in self.args[name]:
             if kind == 'request' and arg.direction != TypeArgument.Input: continue
             if kind == 'response' and arg.direction != TypeArgument.Output: continue
             if definition:
-                desc += self.definition_function_member(name, arg, kind, uid + 1)
+                desc += self.definition_function_member(name, arg, kind, uid)
             else:
-                desc += self.function_member(name, kind, uid + 1)
+                desc += self.function_member(name, kind, uid)
+            uid = uid + 1
         return desc
 
     def function_member(self, name, kind, uid):
