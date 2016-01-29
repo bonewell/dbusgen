@@ -59,6 +59,7 @@ class MessageDescriptionVisitor(Visitor):
         fullname = '%s.%s' % (enum.interface(), enum.name())
         if self.logs: print('Visit enumeration %s' % fullname)
         self.enums.append(fullname)
+        return True
 
     def visitStructure(self, struct):
         fullname = (struct.interface(), struct.name())
@@ -101,13 +102,14 @@ class MessageDescriptionVisitor(Visitor):
         self.args[(arg.interface(), arg.parent())].append(arg)
 
     def arraySignature(self, arg):
-        if arg.type() == 'Integer': code = 'i'
-        elif arg.type() == 'String': code = 's'
-        elif arg.type() == 'Boolean': code = 'b'
-        elif arg.type() == 'Float': code = 'd'
-        elif arg.type() in self.enums: code = 'i'
-        elif arg.type() in self.signatures: code = '(%s)' % self.signatures[arg.type()]
-        else: raise RuntimeError('Unknown type: %s' % arg.type())
+        typename = arg.type()
+        if typename == 'Integer': code = 'i'
+        elif typename == 'String': code = 's'
+        elif typename == 'Boolean': code = 'b'
+        elif typename == 'Float': code = 'd'
+        elif typename in self.enums: code = 'i'
+        elif typename in self.signatures: code = '(%s)' % self.signatures[typename]
+        else: raise RuntimeError('Unknown type: %s' % typename)
         return code
 
     def signature(self, arg):

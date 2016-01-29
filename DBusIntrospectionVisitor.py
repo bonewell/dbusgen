@@ -28,6 +28,7 @@ class DBusIntrospectionVisitor(Visitor):
         fullname = '%s.%s' % (enum.interface(), enum.name())
         if self.logs: print('Visit enumeration %s' % fullname)
         self.enums.append(fullname)
+        return True
 
     def visitStructure(self, struct):
         fullname = '%s.%s' % (struct.interface(), struct.name())
