@@ -21,7 +21,7 @@ class TestMessageDescriptionVisitor(TestCase):
         self.assertEqual(msgs.arrayType(a), 'NameSpace::String')
         self.assertEqual(msgs.arrayType(a), 'NameSpace::Boolean')
         self.assertEqual(msgs.arrayType(a), 'NameSpace::Float')
-        a.type.assert_called_once_with()
+        self.assertEqual(a.type.call_count, 4)
         # Enum
         a = Argument(None, None)
         a.type = Mock(return_value='ValueEnum')
