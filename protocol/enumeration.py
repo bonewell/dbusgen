@@ -1,4 +1,4 @@
-from protocol.Component import Component
+from .component import Component
 
 class Enumeration(Component):
     def __init__(self, adapter, info):

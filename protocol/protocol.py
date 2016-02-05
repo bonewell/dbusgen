@@ -1,5 +1,5 @@
-from protocol.Composite import Composite
-from protocol.Interface import Interface
+from .composite import Composite
+from .interface import Interface
 
 class Protocol(Composite):
     def __init__(self, adapter):

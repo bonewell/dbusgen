@@ -1,9 +1,9 @@
 from xml.etree import ElementTree
-from protocol.Visitor import Visitor
-from protocol.Argument import TypeArgument
+from protocol import Visitor, TypeArgument
 
 class DBusIntrospectionVisitor(Visitor):
-    doctype = '<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">'
+    doctype = ('<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"'
+    + ' "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">')
 
     def __init__(self, provider, domain, path):
         self.provider = provider
@@ -28,6 +28,7 @@ class DBusIntrospectionVisitor(Visitor):
         fullname = '%s.%s' % (enum.interface(), enum.name())
         if self.logs: print('Visit enumeration %s' % fullname)
         self.enums.append(fullname)
+        return True
 
     def visitStructure(self, struct):
         fullname = '%s.%s' % (struct.interface(), struct.name())
@@ -67,7 +68,7 @@ class DBusIntrospectionVisitor(Visitor):
 
     def visitArgument(self, arg):
         if self.logs: print('Visit argument %s' % arg.name())
-        if arg.isStruct():
+        if arg.ofStruct():
             self.prepareStruct(arg)
         else:
             self.createArgument(arg)
@@ -95,9 +96,9 @@ class DBusIntrospectionVisitor(Visitor):
 
     def xml(self, interface = None):
         tree = self.tree
-        if interface is not None:
+        if interface != None:
             fullname = '%s.%s.%s' % (self.domain, self.provider, interface)
             tree = self.tree.find("interface[@name='%s']" % fullname)
-            if tree is None:
+            if tree == None:
                 raise RuntimeError('Unknown interface: %s' % interface)
         return '%s\n%s' % (self.doctype, ElementTree.tostring(tree))

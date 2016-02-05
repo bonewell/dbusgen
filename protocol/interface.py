@@ -1,8 +1,8 @@
-from protocol.Composite import Composite 
-from protocol.Enumeration import Enumeration
-from protocol.Structure import Structure
-from protocol.Signal import Signal
-from protocol.Method import Method
+from .composite import Composite
+from .structure import Structure
+from .enumeration import Enumeration
+from .signal import Signal
+from .method import Method
 
 class Interface(Composite):
     def __init__(self, adapter, info):
@@ -12,10 +12,10 @@ class Interface(Composite):
     def load(self):
         for x in self.adapter.enumerations(self.info):
             self.elements.append(Enumeration(self.adapter, x))
-        
+
         for x in self.adapter.structures(self.info):
             self.elements.append(Structure(self.adapter, x))
-        
+
         requests = []
         responses = {}
         for x in self.adapter.functions(self.info):

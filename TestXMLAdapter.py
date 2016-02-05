@@ -1,8 +1,6 @@
 from unittest import TestCase
-from XMLAdapter import XMLAdapter
-from terms.Interface import *
-from terms.Structure import *
-from terms.Function import *
+from xmladapter import XMLAdapter
+from terms import *
 
 class TestXMLAdapter(TestCase):
     adapter = XMLAdapter('QT_HMI_API.xml')
@@ -75,7 +73,7 @@ class TestXMLAdapter(TestCase):
         service = Structure()
         service.name = 'ServiceInfo'
         service.interface = common
-        args = self.adapter.parameters(service)
+        args = self.adapter.structureParameters(service)
         self.assertEqual(len(args), 2)
         self.assertEqual(args[0].name, 'url')
         self.assertEqual(args[0].type, 'String')
@@ -92,7 +90,7 @@ class TestXMLAdapter(TestCase):
         on_resume.type = 'notification'
         on_resume.provider = 'sdl'
         on_resume.interface = common
-        args = self.adapter.parameters(on_resume)
+        args = self.adapter.functionParameters(on_resume)
         self.assertEqual(len(args), 1)
         self.assertEqual(args[0].name, 'appID')
         self.assertEqual(args[0].type, 'Integer')
