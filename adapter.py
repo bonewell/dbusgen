@@ -1,10 +1,3 @@
-from terms.Interface import Interface
-from terms.Function import Function
-from terms.Structure import Structure
-from terms.Parameter import Parameter
-from terms.Enumeration import Enumeration
-from terms.EnumerationElement import EnumerationElement
-
 class Adapter(object):
 
     def interfaces(self):
@@ -25,8 +18,10 @@ class Adapter(object):
     def structure(self, name, interface):
         pass
 
-    def parameters(self, parent):
-        """ parent is Structure or Function"""
+    def functionParameters(self, func):
+        pass
+
+    def structureParameters(self, struct):
         pass
 
     def enumerations(self, interface):

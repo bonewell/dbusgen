@@ -1,6 +1,5 @@
-from protocol.Composite import Composite
-from protocol.Argument import Argument
-from protocol.Argument import TypeArgument
+from .composite import Composite
+from .argument import Argument, TypeArgument
 
 class Method(Composite):
     def __init__(self, adapter, request, response):
@@ -9,10 +8,10 @@ class Method(Composite):
         self.response = response
 
     def load(self):
-        for x in self.adapter.parameters(self.request):
+        for x in self.adapter.functionParameters(self.request):
             self.elements.append(Argument(self.adapter, x, TypeArgument.Input))
 
-        for x in self.adapter.parameters(self.response):
+        for x in self.adapter.functionParameters(self.response):
             self.elements.append(Argument(self.adapter, x, TypeArgument.Output))
 
     def accept(self, v):
@@ -24,3 +23,6 @@ class Method(Composite):
 
     def provider(self):
         return self.request.provider
+
+    def interface(self):
+        return self.request.interface.name

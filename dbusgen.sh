@@ -22,4 +22,5 @@ case "$mode" in
     request) python$ver make_request_to_sdl"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
     response) python$ver make_hmi_requests"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
     notify) python$ver make_notifications_qml"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    *) echo 'Usage: ./dbusgen [desc|intro|qml|cpp|request|response|notify] [old] [|3]' ;;
 esac

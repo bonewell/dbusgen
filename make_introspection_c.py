@@ -38,8 +38,8 @@
 
 from argparse import ArgumentParser
 from os import path
-from XMLAdapter import XMLAdapter
-from protocol.Protocol import Protocol
+from xmladapter import XMLAdapter
+from protocol import Protocol
 from DBusIntrospectionVisitor import DBusIntrospectionVisitor
 from BinaryIntrospection import BinaryIntrospection
 
@@ -54,6 +54,8 @@ print("Read protocol: %s" % args.infile)
 introspection = DBusIntrospectionVisitor('sdl', 'com.ford.hmi', '/com/ford/hmi')
 #introspection.logs = True
 protocol.accept(introspection)
+if not path.isdir(args.outdir):
+    os.makedirs(args.outdir)
 filename = path.join(args.outdir, 'introspection_xml.cc')
 print("Write binary introspection: %s" % filename)
 binary = BinaryIntrospection(introspection)
