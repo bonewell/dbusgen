@@ -19,8 +19,8 @@ case "$mode" in
     intro) python$ver make_introspection_c"$suffix".py --infile QT_HMI_API.xml --outdir $dir ;;
     qml) python$ver make_qml_dbus_qml"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
     cpp) python$ver make_qml_dbus_cpp"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
-    request) python$ver make_request_to_sdl"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
-    response) python$ver make_hmi_requests"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    sdl) python$ver make_request_to_sdl"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
+    hmi) python$ver make_hmi_requests"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
     notify) python$ver make_notifications_qml"$suffix".py --infile QT_HMI_API.xml --version 5.1.0 --outdir $dir ;;
-    *) echo 'Usage: ./dbusgen [desc|intro|qml|cpp|request|response|notify] [old] [|3]' ;;
+    *) echo 'Usage: ./dbusgen [desc|intro|qml|cpp|sdl|hmi|notify] [old] [|3]' ;;
 esac
