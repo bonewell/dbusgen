@@ -54,3 +54,9 @@ class Argument(Component):
 
     def ofStruct(self):
         return self.of_structure
+
+    def restricted(self):
+        return self.info.minvalue != None or self.info.maxvalue != None or self.info.minlength > 0 or self.info.maxlength > 0
+
+    def restrictedArray(self):
+        return self.isArray() and (self.info.minsize > 0 or self.info.maxsize > 0)
