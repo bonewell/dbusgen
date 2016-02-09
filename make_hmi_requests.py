@@ -47,7 +47,7 @@ arg_parser = ArgumentParser(description="Generates C++ code to D-Bus adaptor on 
 arg_parser.add_argument('--infile', required=True, help="full name of input file, e.g. applink/src/components/interfaces/QT_HMI_API.xml")
 # TODO(KKolodiy): unused argument 'version', CMakeList.txt run this script with version
 arg_parser.add_argument('--version', required=False, help="Qt version 4.8.5 (default) or 5.1.0")
-arg_parser.add_argument('--outdir', required=True, help="path to directory where output files request_to_sdl.h, request_to_sdl.cc will be saved")
+arg_parser.add_argument('--outdir', required=True, help="path to directory where output files hmi_requests.h, hmi_requests.cc will be saved")
 args = arg_parser.parse_args()
 
 adapter = XMLAdapter(args.infile)

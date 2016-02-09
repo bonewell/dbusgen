@@ -61,6 +61,28 @@ QJSValue HMIRequest::CreateQJSValue(QStringList value);'''
   };
   '''
 
+    tpl_template_cpp = "template<>\nQJSValue HMIRequest::CreateQJSValue(%s_%s value){\n  QJSValue object = hmi_callback_.engine()->newObject();\n%sreturn object;\n}\n"
+
+    cppHmiRequest = '''HMIRequest::HMIRequest(QJSValue hmi_callback, QDBusInterface *interface, QList<QVariant> args, QString name) :
+      hmi_callback_(hmi_callback), interface_(interface), args_(args) {
+  QDBusPendingCall pcall = interface->asyncCallWithArgumentList(name, args);
+  watcher_ = new QDBusPendingCallWatcher(pcall);
+  QObject::connect(watcher_, SIGNAL(finished(QDBusPendingCallWatcher*)), this, SLOT(invokeCallback()));
+  }
+  
+void HMIRequest::invokeCallback() {
+  if (!hmi_callback_.isUndefined()) {
+    QJSValueList qjsValueList;
+    qjsValueList = this->fillArgsList();
+    hmi_callback_.call(qjsValueList);
+  }
+  watcher_->deleteLater();
+  this->deleteLater();
+  }
+  '''
+
+    tpl_request_cpp = 'QJSValueList %s_%s::fillArgsList() {\n  QDBusPendingReply< %s > reply = *watcher_;\n  QJSValueList qjsValueList;\n  \n  QJSValue param;\n  %s\n  return qjsValueList;\n}\n'
+
     def __init__(self, data):
         self.data = data
 
@@ -86,22 +108,12 @@ QJSValue HMIRequest::CreateQJSValue(QStringList value);'''
         os.sys.stdout = fd
         print(CppWarning % self.generator)
         print(CppHeader % date.today().year)
-        fd.close()
-
-
-    def __A(self):
-        fd = open(filename, 'w')
-        os.sys.stdout = fd
-        print(CppWarning % self.generator)
-        print(CppHeader % date.today().year)
-        print(self.include, end="\n\n")
-
-        print("namespace {", end="\n\n")
-        print(self.desc.structs(), end="\n\n")
-        for name in self.desc.names:
-            print(self.desc.definition(name), end="\n\n")
-        print("}", end="\n\n")
-
-        data = (self.desc.namespace, self.desc.messages())
-        print("namespace %s {\n\n%s\n}" % data, end="\n\n")
+        print('#include "hmi_requests.h"\n')
+        print("namespace requests {")
+        for s in self.data.structures:
+            print(self.tpl_template_cpp % (s + (self.data.params(s),)))
+        print(self.cppHmiRequest)
+        for m in self.data.methods:
+            print(self.tpl_request_cpp % (m + (self.data.func_params(m), self.data.prepared_params(m))))
+        print("}  // namespace requests")
         fd.close()
