@@ -5,13 +5,13 @@ class DBusIntrospectionVisitor(Visitor):
     doctype = ('<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"'
     + ' "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">')
 
-    def __init__(self, provider, domain, path):
+    def __init__(self, provider, domain, path, logs=False):
         self.provider = provider
         self.domain = domain
         self.tree = ElementTree.Element('node', attrib={'name': path})
         self.enums = []
         self.structs = {}
-        self.logs = False
+        self.logs = logs
 
     def visitProtocol(self, protocol):
         if self.logs: print('Visit protocol')

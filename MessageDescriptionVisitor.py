@@ -7,10 +7,10 @@ class MessageDescriptionVisitor(Visitor):
     tpl_type_array = "const %s::ArrayDescription"
     tpl_type_parameter = "const %s::ParameterDescription"
 
-    tpl_structs = "struct Structs {\n%s};"
+    tpl_structs = "struct Structs {\n%s};\n"
     tpl_structs_member = "  static %(type)s* %(name)s__parameters[];\n"
 
-    tpl_definition_structure = "%(type)s* Structs::%(name)s__parameters[] = {\n%(args)s  NULL };"
+    tpl_definition_structure = "%(type)s* Structs::%(name)s__parameters[] = {\n%(args)s  NULL };\n"
     tpl_structure_member = "  (%(type)s*)&%(name)s__parameter%(id)d,\n"
     tpl_definition_structure_member = "%(type)s %(name)s__parameter%(id)d = {\n%(info)s};\n"
 
@@ -26,10 +26,10 @@ class MessageDescriptionVisitor(Visitor):
 
     tpl_messages = "const MessageDescription* message_descriptions[] = {\n%s  NULL\n};"
     tpl_messages_member = "  &%(name)s__%(type)s,\n"
-    tpl_definition_message = "%(type)s %(name)s__%(kind)s = {\n%(info)s};"
+    tpl_definition_message = "%(type)s %(name)s__%(kind)s = {\n%(info)s};\n"
     tpl_message_info = '  "%(interface)s",\n  "%(nick)s",\n  hmi_apis::messageType::%(kind)s,\n  hmi_apis::FunctionID::%(type)s,\n  %(name)s__%(kind)s__parameters\n'
 
-    def __init__(self, namespace):
+    def __init__(self, namespace, logs=False):
         self.namespace = namespace
         self.doTypes()
         self.enums = []
@@ -39,7 +39,7 @@ class MessageDescriptionVisitor(Visitor):
         self.methods = {}
         self.signals = OrderedDict()
         self.args = OrderedDict()
-        self.logs = False
+        self.logs = logs
 
     def doTypes(self):
         self.type_message = self.tpl_type_message % self.namespace
@@ -165,7 +165,7 @@ class MessageDescriptionVisitor(Visitor):
     def definition_method(self, name):
         return (self.function_members(name, 'request', True) +
         self.function_array_parameters(name, 'request') +
-        self.function_info(name, 'request') + '\n\n' +
+        self.function_info(name, 'request') + '\n' +
         self.function_members(name, 'response', True) +
         self.function_array_parameters(name, 'response') +
         self.function_info(name, 'response'))

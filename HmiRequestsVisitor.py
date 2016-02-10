@@ -12,13 +12,13 @@ class HmiRequestsVisitor(Visitor):
 
     tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
 
-    def __init__(self):
+    def __init__(self, logs=False):
         self.enums = []
         self.names = []
         self.structures = OrderedDict()
         self.methods = OrderedDict()
         self.args = OrderedDict()
-        self.logs = False
+        self.logs = logs
 
     def visitProtocol(self, protocol):
         if self.logs: print('Visit protocol')

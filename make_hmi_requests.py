@@ -6,7 +6,7 @@
 #
 # This file is a part of HMI D-Bus layer.
 #
-# Copyright (c) 2013-2015, Ford Motor Company
+# Copyright (c) 2013-2016, Ford Motor Company
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from argparse import ArgumentParser
-from os import path
 from xmladapter import XMLAdapter
 from protocol import Protocol
 from HmiRequestsVisitor import HmiRequestsVisitor
@@ -51,16 +50,8 @@ arg_parser.add_argument('--outdir', required=True, help="path to directory where
 args = arg_parser.parse_args()
 
 adapter = XMLAdapter(args.infile)
-protocol = Protocol(adapter)
-print("Read protocol: %s" % args.infile)
-visitor = HmiRequestsVisitor()
-visitor.logs = True
-protocol.accept(visitor)
-if not path.isdir(args.outdir):
-    os.makedirs(args.outdir)
-print("Write HMI requests")
-writer = HmiRequests(visitor)
-headername = path.join(args.outdir, 'hmi_requests.h')
-writer.writeHeader(headername)
-sourcename = path.join(args.outdir, 'hmi_requests.cc')
-writer.writeSource(sourcename)
+visitor = HmiRequestsVisitor(logs=True)
+print("Read protocol from %s" % args.infile)
+Protocol(adapter).accept(visitor)
+print("Save HMI requests to %s" % args.outdir)
+HmiRequests(visitor).save(args.outdir)

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from protocol import Visitor, TypeArgument
 
-class RequestToSdlVisitor(Visitor):
+class QmlDBusQmlVisitor(Visitor):
     tpl_list_params = '  object.setProperty("%s", %s);\n'
 
     tpl_list_params_value_mandatory = 'CreateQJSValue(value.%s)'
@@ -20,12 +20,6 @@ class RequestToSdlVisitor(Visitor):
         self.methods = OrderedDict()
         self.args = OrderedDict()
         self.logs = logs
-        if version == "4.8.5":
-            self.prefix = 'Script'
-            self.conntype = 'Direct'
-        else: #version == "5.1.0":
-            self.prefix = 'JS'
-            self.conntype = 'BlockingQueued'
 
     def visitProtocol(self, protocol):
         if self.logs: print('Visit protocol')
@@ -33,7 +27,7 @@ class RequestToSdlVisitor(Visitor):
 
     def visitInterface(self, iface):
         if self.logs: print('Visit interface %s' % iface.name())
-        self.ifaces.append(iface.name())
+        self.ifaces.append(iface)
         return True
 
     def visitEnumeration(self, enum):
@@ -125,56 +119,3 @@ class RequestToSdlVisitor(Visitor):
     def prepared_params(self, method):
         self.uid = 0
         return ''.join([ self.prepare_param(p) for p in self.args[method] if p.direction == TypeArgument.Output])
-
-    tpl_interface = '  QDBusInterface *%s;'
-    tpl_invokable = '  Q_INVOKABLE bool %s_%s(%sQ%sValue hmi_callback);'
-
-    def interfaces(self):
-        return '\n'.join([ self.tpl_interface % i for i in self.ifaces ])
-
-    def invokables(self):
-        return '\n'.join([ self.prepare_invokable(m) for m in self.methods ])
-
-    def prepare_invokable(self, method):
-        return self.tpl_invokable % (method + (self.prepare_args(method), self.prefix))
-
-    def prepare_args(self, method):
-        params = [ 'QVariant %s,' % arg.name() for arg in self.args[method] if arg.direction == TypeArgument.Input ]
-        if len(params) > 0:
-           return ''.join(params)
-        return ''
-
-    tpl_new_interface = '  %s = new QDBusInterface("com.ford.sdl.core", "/", "com.ford.sdl.core.%s", bus, this);'
-
-    tpl_delete_interface = '  %s->deleteLater();'
-
-    tpl_fill_arg = '  %s %s_tmp;\n  if (%s) {\n%s\n  } else {\n%s\n  }\n'
-    
-    tpl_condition = 'VariantToValue(%s, %s_tmp)'
-
-    tpl_negative = '    LOG4CXX_ERROR(logger_, "%s in %s_%s is NOT valid");\n    return false;'
-
-    tpl_positive = '%s    args << QVariant::fromValue(%s_tmp);'
-
-    tpl_validation = ''
-
-    def new_interfaces(self):
-        return '\n'.join([ self.tpl_new_interface % (i, i) for i in self.ifaces ])
-
-    def delete_interfaces(self):
-        return '\n'.join([ self.tpl_delete_interface % i for i in self.ifaces ])
-
-    def fill_args(self, method):
-        return ''.join([ self.tpl_fill_arg % (self.qt_param_type(arg), arg.name(), self.condition(arg), self.positive(arg), self.negative(arg)) for arg in self.args[method] if arg.direction == TypeArgument.Input ])
-
-    def condition(self, arg):
-        return self.tpl_condition % (arg.name(), arg.name())
-
-    def positive(self, arg):
-        return self.tpl_positive % (self.validation(arg), arg.name())
-
-    def negative(self, arg):
-        return self.tpl_negative % (arg.name(), arg.interface(), arg.parent())
-
-    def validation(self, arg):
-        return self.tpl_validation 

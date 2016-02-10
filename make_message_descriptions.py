@@ -6,7 +6,7 @@
 #
 # This file is a part of HMI D-Bus layer.
 #
-# Copyright (c) 2013-2015, Ford Motor Company
+# Copyright (c) 2013-2016, Ford Motor Company
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from argparse import ArgumentParser
-from os import path
 from xmladapter import XMLAdapter
 from protocol import Protocol
 from MessageDescriptionVisitor import MessageDescriptionVisitor
@@ -49,14 +48,8 @@ arg_parser.add_argument('--outdir', required=True, help="path to directory where
 args = arg_parser.parse_args()
 
 adapter = XMLAdapter(args.infile)
-protocol = Protocol(adapter)
-print("Read protocol: %s" % args.infile)
-description = MessageDescriptionVisitor('ford_message_descriptions')
-description.logs = True
-protocol.accept(description)
-if not path.isdir(args.outdir):
-    os.makedirs(args.outdir)
-filename = path.join(args.outdir, 'message_descriptions.cc')
-print("Write message descriptions: %s" % filename)
-cpp = CppDescription(description)
-cpp.write(filename)
+visitor = MessageDescriptionVisitor('ford_message_descriptions')
+print("Read protocol from %s" % args.infile)
+Protocol(adapter).accept(visitor)
+print("Save message descriptions %s" % args.outdir)
+CppDescription(visitor).save(args.outdir)

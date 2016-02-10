@@ -1,22 +1,16 @@
-from __future__ import print_function
-import os
-from datetime import date
-from Header import CppWarning
-from Header import CppHeader
+from saver import AbstractSaver, HeaderWriter, SourceWriter
+from header import CppWarning, CppHeader
 
-class HmiRequests(object):
-    generator = os.path.basename(__file__)
-
+class HmiRequests(AbstractSaver):
+    filename = 'hmi_requests'
     guard = "SRC_COMPONENTS_QTHMI_QMLMODELQT5_HMIREQUESTS_"
-
     includes = [ "<QObject>", "<QJSValue>", "<QDBusPendingCall>", "<QDBusPendingCallWatcher>",
     "<QDBusPendingReply>", "<QDBusAbstractInterface>", "<QDBusInterface>", "<QJSEngine>", '"qml_dbus.h"' ]
+    namespace = 'requests'
 
     tpl_template = "template<>\nQJSValue HMIRequest::CreateQJSValue(%s_%s value);\n"
 
-    classHmiRequest = '''
-namespace requests {
-class HMIRequest: public QObject {
+    classHmiRequest = '''class HMIRequest: public QObject {
   Q_OBJECT
 public:
   HMIRequest(QJSValue hmi_callback, QDBusInterface *interface, QList<QVariant> args, QString name );
@@ -86,34 +80,20 @@ void HMIRequest::invokeCallback() {
     def __init__(self, data):
         self.data = data
 
-    def writeHeader(self, filename):
-        fd = open(filename, 'w')
-        os.sys.stdout = fd
-        print(CppWarning % self.generator)
-        print(CppHeader % date.today().year)
-        print("#ifndef %s\n#define %s\n" % (self.guard, self.guard))
-        for i in self.includes:
-            print("#include %s" % i)
-        print(self.classHmiRequest)
-        for s in self.data.structures:
-            print(self.tpl_template % s)
-        for m in self.data.methods:
-            print(self.tpl_request % (m + m))
-        print("}  // namespace requests")
-        print("#endif  // %s" % self.guard)
-        fd.close()
+    def write(self, path):
+        self.writeHeader(path)
+        self.writeSource(path)
 
-    def writeSource(self, filename):
-        fd = open(filename, 'w')
-        os.sys.stdout = fd
-        print(CppWarning % self.generator)
-        print(CppHeader % date.today().year)
-        print('#include "hmi_requests.h"\n')
-        print("namespace requests {")
-        for s in self.data.structures:
-            print(self.tpl_template_cpp % (s + (self.data.params(s),)))
-        print(self.cppHmiRequest)
-        for m in self.data.methods:
-            print(self.tpl_request_cpp % (m + (self.data.func_params(m), self.data.prepared_params(m))))
-        print("}  // namespace requests")
-        fd.close()
+    def writeHeader(self, path):
+        info = HeaderWriter.Metadata(__file__, self.guard, self.includes, self.namespace)
+        with HeaderWriter(self.filename, path, info) as writer:
+            writer.write(self.classHmiRequest)
+            map(lambda s: writer.write(self.tpl_template % s), self.data.structures)
+            map(lambda m: writer.write(self.tpl_request % (m + m)), self.data.methods)
+
+    def writeSource(self, path):
+        info = SourceWriter.Metadata(__file__, ['"%s.h"' % self.filename], self.namespace)
+        with SourceWriter(self.filename, path, info) as writer:
+            map(lambda s: writer.write(self.tpl_template_cpp % (s + (self.data.params(s),))), self.data.structures)
+            writer.write(self.cppHmiRequest)
+            map(lambda m: writer.write(self.tpl_request_cpp % (m + (self.data.func_params(m), self.data.prepared_params(m)))), self.data.methods)

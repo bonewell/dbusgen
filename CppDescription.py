@@ -1,29 +1,21 @@
-from __future__ import print_function
-import os
-from datetime import date
-from Header import CppWarning
-from Header import CppHeader
+from saver import AbstractSaver
+from saver import SourceWriter
+from header import CppWarning
+from header import CppHeader
 
-class CppDescription(object):
-    generator = os.path.basename(__file__)
-    include = "#include \"dbus/message_descriptions.h\""
+class CppDescription(AbstractSaver):
+    filename = 'message_descriptions'
+    include = '"dbus/message_descriptions.h"\n'
 
     def __init__(self, desc):
         self.desc = desc
 
-    def write(self, filename):
-        fd = open(filename, 'w')
-        os.sys.stdout = fd
-        print(CppWarning % self.generator)
-        print(CppHeader % date.today().year)
-        print(self.include, end="\n\n")
-
-        print("namespace {", end="\n\n")
-        print(self.desc.structs(), end="\n\n")
-        for name in self.desc.names:
-            print(self.desc.definition(name), end="\n\n")
-        print("}", end="\n\n")
-
-        data = (self.desc.namespace, self.desc.messages())
-        print("namespace %s {\n\n%s\n}" % data, end="\n\n")
-        fd.close()
+    def write(self, path):
+        info = SourceWriter.Metadata(__file__, [ self.include ])
+        with SourceWriter(self.filename, path, info) as writer:
+            writer.write("namespace {\n")
+            writer.write(self.desc.structs())
+            map(lambda n: writer.write(self.desc.definition(n)), self.desc.names)
+            writer.write("}\n")
+            data = (self.desc.namespace, self.desc.messages())
+            writer.write("namespace %s {\n\n%s\n}\n" % data)

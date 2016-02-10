@@ -1,35 +1,26 @@
-from __future__ import print_function
-import os
-from datetime import date
-from Header import CppWarning
-from Header import CppHeader
+from saver import AbstractSaver
+from saver import SourceWriter
+from header import CppWarning
+from header import CppHeader
 
-class BinaryIntrospection(object):
-    generator = os.path.basename(__file__)
-    prefix = 'char introspection_xml[] = {'
-    suffix = ' 0x00\n};'
+class BinaryIntrospection(AbstractSaver):
+    filename = 'introspection_xml'
+    prefix = 'char introspection_xml[] = {\n  '
+    suffix = '};'
+    length = 12 # count of chars in a line to devide
 
     def __init__(self, dbus):
         self.dbus = dbus
 
-    def write(self, filename):
-        fd = open(filename, 'w')
-        os.sys.stdout = fd
-        print(CppWarning % self.generator)
-        print(CppHeader % date.today().year)
-        print(self.prefix, end='')
-        print(self.convert(), end='')
-        print(self.suffix, end='')
-        fd.close()
+    def write(self, path):
+        info = SourceWriter.Metadata(__file__)
+        with SourceWriter(self.filename, path, info) as writer:
+            writer.write(self.prefix, end='')
+            writer.write(self.convert())
+            writer.write(self.suffix, end='')
 
     def convert(self):
-        cnt = 0
-        value = ''
-        for char in self.dbus.xml():
-            if cnt % 12 == 0:
-                value += '\n  '
-            else:
-                value += ' '
-            value += '0x%02x,' % ord(char)
-            cnt += 1
-        return value
+        chars = [ '0x%02x' % ord(c) for c in self.dbus.xml() ] + ['0x00']
+        step = self.length
+        lines = [', '.join(chars[i:i + step]) for i in range(0, len(chars), step)]
+        return ',\n  '.join(lines)

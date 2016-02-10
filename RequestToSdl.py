@@ -1,11 +1,14 @@
 from __future__ import print_function
 import os
 from datetime import date
-from Header import CppWarning
-from Header import CppHeader
+from saver import Saver
+from header import CppWarning
+from header import CppHeader
 
-class RequestToSdl(object):
+class RequestToSdl(Saver):
     generator = os.path.basename(__file__)
+
+    tpl_filename = 'request_to_sdl.%s'
 
     guard = "SRC_COMPONENTS_QT_HMI_QML_PLUGINS_DBUS_ADAPTER_REQUEST_TO_SDL_H_"
 
@@ -29,7 +32,7 @@ class RequestToSDL : public QObject
 
     tpl_request = 'bool RequestToSDL::%s_%s(%sQ%sValue hmi_callback) {\n  LOG4CXX_TRACE(logger_, "ENTER");\n  QList<QVariant> args;\n%s  new requests::%s_%s(hmi_callback, %s , args, "%s");\n  LOG4CXX_TRACE(logger_, "EXIT");\n  return true;\n}\n'
 
-    def __init__(self, version, data):
+    def __init__(self, data, version="5.1.0"):
         self.data = data
         if version == "5.1.0":
            self.prefix = 'JS'
@@ -38,14 +41,17 @@ class RequestToSDL : public QObject
            self.prefix = 'Script'
            self.includes_header.append("<QtScript/QScriptValue>")
 
+    def write(self, path):
+        self.writeHeader(os.path.join(path, self.tpl_filename % 'h'))
+        self.writeSource(os.path.join(path, self.tpl_filename % 'cc'))
+
     def writeHeader(self, filename):
         fd = open(filename, 'w')
         os.sys.stdout = fd
         print(CppWarning % self.generator)
         print(CppHeader % date.today().year)
         print("#ifndef %s\n#define %s\n" % (self.guard, self.guard))
-        for i in self.includes_header:
-            print("#include %s" % i)
+        map(lambda i: print("#include %s" % i), self.includes_header)
         print(self.tpl_classRequestToSDL % (self.data.invokables(), self.data.interfaces()))
         print("#endif  // %s" % self.guard, end='')
         fd.close()
@@ -55,10 +61,8 @@ class RequestToSDL : public QObject
         os.sys.stdout = fd
         print(CppWarning % self.generator)
         print(CppHeader % date.today().year)
-        for i in self.includes_source:
-            print('#include %s' % i)
+        map(lambda i: print('#include %s' % i), self.includes_source)
         print('\nCREATE_LOGGERPTR_GLOBAL(logger_, "DBusPlugin")\n')
         print(self.tpl_new_delete % (self.data.new_interfaces(), self.data.delete_interfaces()))
-        for m in self.data.methods:
-            print(self.tpl_request % (m + (self.data.prepare_args(m).replace(',', ', '), self.prefix, self.data.fill_args(m)) + m + m))
+        map(lambda m: print(self.tpl_request % (m + (self.data.prepare_args(m).replace(',', ', '), self.prefix, self.data.fill_args(m)) + m + m)), self.data.methods)
         fd.close()

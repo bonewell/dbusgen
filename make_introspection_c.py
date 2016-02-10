@@ -6,7 +6,7 @@
 #
 # This file is a part of HMI D-Bus layer.
 #
-# Copyright (c) 2013-2015, Ford Motor Company
+# Copyright (c) 2013-2016, Ford Motor Company
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from argparse import ArgumentParser
-from os import path
 from xmladapter import XMLAdapter
 from protocol import Protocol
 from DBusIntrospectionVisitor import DBusIntrospectionVisitor
@@ -49,14 +48,8 @@ arg_parser.add_argument('--outdir', required=True, help="Path to directory where
 args = arg_parser.parse_args()
 
 adapter = XMLAdapter(args.infile)
-protocol = Protocol(adapter)
-print("Read protocol: %s" % args.infile)
-introspection = DBusIntrospectionVisitor('sdl', 'com.ford.hmi', '/com/ford/hmi')
-#introspection.logs = True
-protocol.accept(introspection)
-if not path.isdir(args.outdir):
-    os.makedirs(args.outdir)
-filename = path.join(args.outdir, 'introspection_xml.cc')
-print("Write binary introspection: %s" % filename)
-binary = BinaryIntrospection(introspection)
-binary.write(filename)
+visitor = DBusIntrospectionVisitor('sdl', 'com.ford.hmi', '/com/ford/hmi')
+print("Read protocol from %s" % args.infile)
+Protocol(adapter).accept(visitor)
+print("Save binary introspection to %s" % args.outdir)
+BinaryIntrospection(visitor).save(args.outdir)
