@@ -1,7 +1,5 @@
 from saver import AbstractSaver
 from saver import SourceWriter
-from header import CppWarning
-from header import CppHeader
 
 class BinaryIntrospection(AbstractSaver):
     filename = 'introspection_xml'
