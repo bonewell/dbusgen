@@ -13,10 +13,11 @@ class QmlDBusQmlVisitor(Visitor):
     tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
 
     def __init__(self, version="5.1.0", logs=False):
-        self.enums = []
+        self.enums = OrderedDict()
         self.names = []
         self.ifaces = []
         self.structures = OrderedDict()
+        self.signals = OrderedDict()
         self.methods = OrderedDict()
         self.args = OrderedDict()
         self.logs = logs
@@ -28,12 +29,13 @@ class QmlDBusQmlVisitor(Visitor):
     def visitInterface(self, iface):
         if self.logs: print('Visit interface %s' % iface.name())
         self.ifaces.append(iface)
+        self.enums[iface.name()] = []
         return True
 
     def visitEnumeration(self, enum):
         fullname = '%s.%s' % (enum.interface(), enum.name())
         if self.logs: print('Visit enumeration %s' % fullname)
-        self.enums.append(fullname)
+        self.enums[enum.interface()].append(enum)
         return True
 
     def visitStructure(self, struct):
@@ -46,14 +48,21 @@ class QmlDBusQmlVisitor(Visitor):
     def visitSignal(self, signal):
         fullname = (signal.interface(), signal.name())
         if self.logs: print('Visit signal %s' % '.'.join(fullname))
-        return False
+        if signal.provider() == 'hmi':
+            key = (signal.interface(), signal.name())
+            self.signals[key] = signal
+            self.args[key] = []
+            return True
+        else:
+            return False
 
     def visitMethod(self, method):
         fullname = (method.interface(), method.name())
         if self.logs: print('Visit method %s' % '.'.join(fullname))
-        if method.provider() == 'sdl':
-            self.methods[(method.interface(), method.name())] = method
-            self.args[(method.interface(), method.name())] = []
+        if method.provider() == 'hmi':
+            key = (method.interface(), method.name())
+            self.methods[key] = method
+            self.args[key] = []
             return True
         else:
             return False
@@ -119,3 +128,23 @@ class QmlDBusQmlVisitor(Visitor):
     def prepared_params(self, method):
         self.uid = 0
         return ''.join([ self.prepare_param(p) for p in self.args[method] if p.direction == TypeArgument.Output])
+
+    tpl_enumerate = 'var %(name)s = {\n%(items)s\n}\n'
+
+    tpl_element = '  %s: %d'
+
+    def enumerates(self, iface):
+        return self.enums[iface.name()]
+
+    def enum(self, enum):
+        return self.tpl_enumerate % { 'name': enum.name(), 'items': self.enum_values(enum) }
+
+    def enum_values(self, enum):
+        self.uid = 0
+        return ',\n'.join([ self.element(e) for e in enum.info.elements ])
+
+    def element(self, e):
+        name = e.internal_name if e.internal_name else e.name
+        value = e.value if e.value else self.uid
+        self.uid += 1
+        return self.tpl_element % (name, value)

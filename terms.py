@@ -8,9 +8,9 @@ class Interface(object):
 class EnumerationElement(object):
     """
         Has atributes:
-            - name string
+            - string name
             - int value
-            - string internal name
+            - string internal_name
     """
     pass
 
@@ -18,7 +18,7 @@ class Enumeration(object):
     """
         Has atributes:
             - string name
-            - EnumerationElement list elements
+            - EnumerationElement items
             - Interface interface
     """
     pass

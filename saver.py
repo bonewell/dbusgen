@@ -47,7 +47,7 @@ class HeaderWriter(Writer):
         self.write(CppHeader % datetime.date.today().year)
         if self.metadata:
             self.write(self.tpl_guard_begin % { 'name': self.metadata.guard })
-        map(lambda i: self.write(self.tpl_include % i), self.metadata.includes)
+            map(lambda i: self.write(self.tpl_include % i), self.metadata.includes)
         if self.__is_namespace():
             self.write(self.tpl_namespace_begin % self.metadata.namespace)
         return self
@@ -80,7 +80,8 @@ class SourceWriter(Writer):
         if self.metadata:
             self.write(CppWarning % self.metadata.generator)
         self.write(CppHeader % datetime.date.today().year)
-        map(lambda i: self.write(self.tpl_include % i), self.metadata.includes)
+        if self.metadata:
+            map(lambda i: self.write(self.tpl_include % i), self.metadata.includes)
         if self.__is_namespace():
             self.write(self.tpl_namespace_begin % self.metadata.namespace)
         return self
@@ -91,3 +92,51 @@ class SourceWriter(Writer):
 
     def __is_namespace(self):
          return self.metadata and self.metadata.namespace is not None
+
+class QmlWriter(Writer):
+    class Metadata(object):
+        def __init__(self, generator, parent, imports=[]):
+            self.generator = os.path.basename(generator)
+            self.parent = parent
+            self.imports = imports
+
+    tpl_import = 'import %s'
+    tpl_parent_begin = '\n%s {'
+    tpl_parent_end = '}'
+
+    def __init__(self, filename, path='', metadata=None):
+        self.metadata = metadata
+        Writer.__init__(self, os.path.join(path, '%s.qml' % filename))
+
+    def __enter__(self):
+        if self.metadata:
+            self.write(CppWarning % self.metadata.generator)
+        self.write(CppHeader % datetime.date.today().year)
+        if self.metadata:
+            map(lambda i: self.write(self.tpl_import % i), self.metadata.imports)
+            self.write(self.tpl_parent_begin % self.metadata.parent)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.write(self.tpl_parent_end)
+
+class JSWriter(Writer):
+    class Metadata(object):
+        def __init__(self, generator):
+            self.generator = os.path.basename(generator)
+
+    pragma = '.pragma library'
+
+    def __init__(self, filename, path='', metadata=None):
+        self.metadata = metadata
+        Writer.__init__(self, os.path.join(path, '%s.js' % filename))
+
+    def __enter__(self):
+        if self.metadata:
+            self.write(CppWarning % self.metadata.generator)
+        self.write(CppHeader % datetime.date.today().year)
+        self.write(self.pragma)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
