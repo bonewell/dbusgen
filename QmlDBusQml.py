@@ -17,18 +17,24 @@ class QmlDBusQml(AbstractSaver):
 
     def write(self, path):
         self.path = path
-        map(self.writeController, self.data.ifaces)
-        map(self.writeJavaScript, self.data.ifaces)
+        map(self.writeController, self.data.interfaces())
+        map(self.writeJavaScript, self.data.interfaces())
 
-    def writeController(self, iface):
-        name = self.tpl_filename % iface.name()
-        info = QmlWriter.Metadata(__file__, self.parent, self.imports)
-        with QmlWriter(name, self.path, info) as writer:
-            writer.write(self.tpl_subitem % { 'name': iface.name() })
+    def writeController(self, interface):
+        methods = self.data.methods(interface)
+        signals = self.data.signals(interface)
+        if signals or methods:
+            name = self.tpl_filename % interface
+            info = QmlWriter.Metadata(__file__, self.parent, self.imports)
+            with QmlWriter(name, self.path, info) as writer:
+                writer.write(self.tpl_subitem % { 'name': interface })
+                map(lambda m: writer.write(self.data.method(m)), methods)
+                map(lambda s: writer.write(self.data.signal(s)), signals)
 
-    def writeJavaScript(self, iface):
-        enums = self.data.enumerates(iface)
+    def writeJavaScript(self, interface):
+        enums = self.data.enumerates(interface)
         if enums:
             info = JSWriter.Metadata(__file__)
-            with JSWriter(iface.name(), self.path, info) as writer:
-                map(lambda e: writer.write(self.data.enum(e)), sorted(enums, key=methodcaller('name')))
+            with JSWriter(interface, self.path, info) as writer:
+                map(lambda e: writer.write(self.data.enum(e)),
+                    sorted(enums, key=methodcaller('name')))

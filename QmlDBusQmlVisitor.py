@@ -2,23 +2,34 @@ from collections import OrderedDict
 from protocol import Visitor, TypeArgument
 
 class QmlDBusQmlVisitor(Visitor):
-    tpl_list_params = '  object.setProperty("%s", %s);\n'
+    tpl_enumerate = 'var %(name)s = {\n%(items)s\n}\n'
 
-    tpl_list_params_value_mandatory = 'CreateQJSValue(value.%s)'
+    tpl_element = '  %s: %d'
 
-    tpl_list_params_value = 'value.%s.presence ? CreateQJSValue(value.%s.val) : QJSValue()'
+    tpl_signal = '  signal %(lowername)s(%(params)s)\n  on%(name)s: console.debug("emitted %(interface)s:%(name)s")'
 
-    tpl_mandatory_param = '\n  param = CreateQJSValue(reply.argumentAt<%d>());'
-
-    tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
+    tpl_method = '''  function %(name)s(params) {
+    console.debug("%(interface)sProxy::%(name)s")
+    try {
+      if("%(name)s" in sdl%(interface)s)
+        return sdl%(interface)s.%(name)s(%(params)s)
+      else
+        return { "__errno": Common.Result.UNSUPPORTED_REQUEST }
+    } catch(err) {
+        return { "__errno": err }
+    }
+  }
+'''
 
     def __init__(self, version="5.1.0", logs=False):
+        self.variant = 'variant' if version == '4.8.5' else 'var'
         self.enums = OrderedDict()
+        self.enums_names = []
         self.names = []
         self.ifaces = []
         self.structures = OrderedDict()
-        self.signals = OrderedDict()
-        self.methods = OrderedDict()
+        self.signals_list = OrderedDict()
+        self.methods_list = OrderedDict()
         self.args = OrderedDict()
         self.logs = logs
 
@@ -28,14 +39,17 @@ class QmlDBusQmlVisitor(Visitor):
 
     def visitInterface(self, iface):
         if self.logs: print('Visit interface %s' % iface.name())
-        self.ifaces.append(iface)
+        self.ifaces.append(iface.name())
         self.enums[iface.name()] = []
+        self.signals_list[iface.name()] = []
+        self.methods_list[iface.name()] = []
         return True
 
     def visitEnumeration(self, enum):
         fullname = '%s.%s' % (enum.interface(), enum.name())
         if self.logs: print('Visit enumeration %s' % fullname)
         self.enums[enum.interface()].append(enum)
+        self.enums_names.append(fullname)
         return True
 
     def visitStructure(self, struct):
@@ -49,9 +63,8 @@ class QmlDBusQmlVisitor(Visitor):
         fullname = (signal.interface(), signal.name())
         if self.logs: print('Visit signal %s' % '.'.join(fullname))
         if signal.provider() == 'hmi':
-            key = (signal.interface(), signal.name())
-            self.signals[key] = signal
-            self.args[key] = []
+            self.signals_list[signal.interface()].append(signal)
+            self.args[(signal.interface(), signal.name())] = []
             return True
         else:
             return False
@@ -60,9 +73,8 @@ class QmlDBusQmlVisitor(Visitor):
         fullname = (method.interface(), method.name())
         if self.logs: print('Visit method %s' % '.'.join(fullname))
         if method.provider() == 'hmi':
-            key = (method.interface(), method.name())
-            self.methods[key] = method
-            self.args[key] = []
+            self.methods_list[method.interface()].append(method)
+            self.args[(method.interface(), method.name())] = []
             return True
         else:
             return False
@@ -80,61 +92,45 @@ class QmlDBusQmlVisitor(Visitor):
     def createArgument(self, arg):
         self.args[(arg.interface(), arg.parent())].append(arg)
 
-
-    def params(self, struct):
-        text = ''
-        for p in self.structures[struct]:
-            text += self.tpl_list_params % (p.name(), self.param_value(p))
-        return text
-
-    def param_value(self, arg):
-        if arg.isMandatory():
-            return self.tpl_list_params_value_mandatory % arg.name()
-        else:
-            return self.tpl_list_params_value % (arg.name(), arg.name())
-
-    def qt_param_type(self, arg):
+    def qml_param_type(self, arg):
         typename = arg.type()
-        if typename == 'Integer': code = 'int'
-        elif typename == 'String': code = 'QString'
+        if arg.isArray() or arg.isStruct() or not arg.isMandatory(): code = self.variant
+        elif typename == 'Integer': code = 'int'
+        elif typename == 'String': code = 'string'
         elif typename == 'Boolean': code = 'bool'
         elif typename == 'Float': code = 'double'
-        elif typename in self.enums: code = 'int'
-        elif typename in self.names: code = arg.fulltype().replace('.', '_')
-        else:
-            raise RuntimeError('Unknown type: %s - %s' % (typename, self.names))
-        if arg.isArray():
-            if typename == 'String':
-                code = 'QStringList'
-            else:
-                code = 'QList< %s >' % code
-        if not arg.isMandatory():
-            code = 'OptionalArgument< %s >' % code
+        elif typename in self.enums_names: code = 'int' 
+        else: code = self.variant
         return code
 
+    def interfaces(self):
+        return self.ifaces
 
-    def prepare_param(self, arg):
-        if arg.isMandatory():
-            text = self.tpl_mandatory_param % self.uid
-        else:
-            text = self.tpl_optional_param % (self.uid, self.uid)
-        text += '\n  qjsValueList.append(param);'
-        self.uid += 1
-        return text
+    def signals(self, interface):
+        return self.signals_list[interface]
 
-    def func_params(self, method):
-        return ','.join([ self.qt_param_type(p) for p in self.args[method] if p.direction == TypeArgument.Output])
+    def signal(self, signal):
+        lowername = signal.name()[:1].lower() + signal.name()[1:]
+        params = self.signal_params(signal)
+        return self.tpl_signal % { 'interface': signal.interface(), 'name': signal.name(), 'params': params, 'lowername': lowername}
 
-    def prepared_params(self, method):
-        self.uid = 0
-        return ''.join([ self.prepare_param(p) for p in self.args[method] if p.direction == TypeArgument.Output])
+    def signal_params(self, signal):
+        key = (signal.interface(), signal.name())
+        return ', '.join([ '%s %s' % (self.qml_param_type(p), p.name()) for p in self.args[key] ])
 
-    tpl_enumerate = 'var %(name)s = {\n%(items)s\n}\n'
+    def method(self, method):
+        name = method.name()[:1].lower() + method.name()[1:]
+        return self.tpl_method % { 'interface': method.interface(), 'name': name, 'params': self.method_params(method) }
 
-    tpl_element = '  %s: %d'
+    def method_params(self, method):
+        key = (method.interface(), method.name())
+        return ', '.join([ 'params.%s' % p.name() for p in self.args[key] if p.direction == TypeArgument.Input ])
 
-    def enumerates(self, iface):
-        return self.enums[iface.name()]
+    def methods(self, interface):
+        return self.methods_list[interface]
+
+    def enumerates(self, interface):
+        return self.enums[interface]
 
     def enum(self, enum):
         return self.tpl_enumerate % { 'name': enum.name(), 'items': self.enum_values(enum) }
