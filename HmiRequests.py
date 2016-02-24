@@ -8,7 +8,6 @@ class HmiRequests(AbstractSaver):
     includes = [ "<QObject>", "<QJSValue>", "<QDBusPendingCall>", "<QDBusPendingCallWatcher>",
     "<QDBusPendingReply>", "<QDBusAbstractInterface>", "<QDBusInterface>", "<QJSEngine>", '"qml_dbus.h"' ]
     namespace = 'requests'
-    
 
     def __init__(self, data):
         self.data = data

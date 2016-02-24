@@ -54,31 +54,31 @@ public slots:
   }
   '''
 
-    tpl_template = "template<>\nQJSValue HMIRequest::CreateQJSValue(%s_%s value);\n"
+    tpl_template = "template<>\nQJSValue HMIRequest::CreateQJSValue(%(name)s value);\n"
 
-    tpl_template_cpp = "template<>\nQJSValue HMIRequest::CreateQJSValue(%s_%s value){\n  QJSValue object = hmi_callback_.engine()->newObject();\n%sreturn object;\n}\n"
+    tpl_template_cpp = "template<>\nQJSValue HMIRequest::CreateQJSValue(%(name)s value){\n  QJSValue object = hmi_callback_.engine()->newObject();\n%(body)sreturn object;\n}\n"
 
-    tpl_request = '''class %s_%s: public HMIRequest {
+    tpl_request = '''class %(name)s: public HMIRequest {
   Q_OBJECT
  public:
-  %s_%s(QJSValue hmi_callback, QDBusInterface *interface, QList<QVariant> args, QString name):
+  %(name)s(QJSValue hmi_callback, QDBusInterface *interface, QList<QVariant> args, QString name):
     HMIRequest(hmi_callback, interface, args, name) {}
  private:
   QJSValueList fillArgsList();
   };
   '''
 
-    tpl_list_params = '  object.setProperty("%s", %s);\n'
+    tpl_list_params = '  object.setProperty("%(name)s", %(value)s);\n'
 
-    tpl_list_params_value_mandatory = 'CreateQJSValue(value.%s)'
+    tpl_list_params_value_mandatory = 'CreateQJSValue(value.%(name)s)'
 
-    tpl_list_params_value = 'value.%s.presence ? CreateQJSValue(value.%s.val) : QJSValue()'
+    tpl_list_params_value = 'value.%(name)s.presence ? CreateQJSValue(value.%(name)s.val) : QJSValue()'
 
-    tpl_mandatory_param = '\n  param = CreateQJSValue(reply.argumentAt<%d>());'
+    tpl_mandatory_param = '\n  param = CreateQJSValue(reply.argumentAt<%(uid)d>());'
 
-    tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
+    tpl_optional_param = '\n  if (reply.argumentAt<%(uid)d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%(uid)d>().val);\n  } else {\n    param = QJSValue();\n  }'
 
-    tpl_fillargslist = 'QJSValueList %s_%s::fillArgsList() {\n  QDBusPendingReply< %s > reply = *watcher_;\n  QJSValueList qjsValueList;\n  \n  QJSValue param;\n  %s\n  return qjsValueList;\n}\n'
+    tpl_fillargslist = 'QJSValueList %(name)s::fillArgsList() {\n  QDBusPendingReply< %(params)s > reply = *watcher_;\n  QJSValueList qjsValueList;\n  \n  QJSValue param;\n  %(filling)s\n  return qjsValueList;\n}\n'
 
     def __init__(self, logs=False):
         self.enums = []
@@ -141,28 +141,29 @@ public slots:
         return self.base_class + '\n\n' + self.qstringlist
 
     def templates(self):
-        return [ self.tpl_template % s for s in self.structures ]
+        return [ self.tpl_template % { 'name': '_'.join(s) } for s in self.structures ]
 
     def bodytemplates(self):
-        return [ self.tpl_template_cpp % (s + (self.params(s),)) for s in self.structures ]
+        return [ self.tpl_template_cpp % { 'name': '_'.join(s), 'body': self.params(s) } for s in self.structures ]
 
     def requests(self):
-        return [ self.tpl_request % (m + m) for m in self.methods ]
+        return [ self.tpl_request % { 'name': '_'.join(m) } for m in self.methods ]
 
     def basemethods(self):
         return self.constructor + '  \n' + self.invoker
 
+    def param(self, arg):
+        return self.tpl_list_params % { 'name': arg.name(), 'value': self.param_value(arg) }
+
     def params(self, struct):
-        text = ''
-        for p in self.structures[struct]:
-            text += self.tpl_list_params % (p.name(), self.param_value(p))
-        return text
+        params = [ self.param(p) for p in self.structures[struct] ]
+        return ''.join(params)
 
     def param_value(self, arg):
         if arg.isMandatory():
-            return self.tpl_list_params_value_mandatory % arg.name()
+            return self.tpl_list_params_value_mandatory % { 'name': arg.name() }
         else:
-            return self.tpl_list_params_value % (arg.name(), arg.name())
+            return self.tpl_list_params_value % { 'name': arg.name() }
 
     def qt_param_type(self, arg):
         typename = arg.type()
@@ -185,9 +186,9 @@ public slots:
 
     def prepare_param(self, arg):
         if arg.isMandatory():
-            text = self.tpl_mandatory_param % self.uid
+            text = self.tpl_mandatory_param % { 'uid': self.uid }
         else:
-            text = self.tpl_optional_param % (self.uid, self.uid)
+            text = self.tpl_optional_param % { 'uid': self.uid }
         text += '\n  qjsValueList.append(param);'
         self.uid += 1
         return text
@@ -200,4 +201,4 @@ public slots:
         return ''.join([ self.prepare_param(p) for p in self.args[method] if p.direction == TypeArgument.Output])
 
     def fillers(self):
-        return [ self.tpl_fillargslist % (m + (self.func_params(m), self.prepared_params(m))) for m in self.methods ]
+        return [ self.tpl_fillargslist % { 'name': '_'.join(m), 'params': self.func_params(m), 'filling': self.prepared_params(m) } for m in self.methods ]

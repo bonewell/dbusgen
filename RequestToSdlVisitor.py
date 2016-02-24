@@ -12,6 +12,20 @@ class RequestToSdlVisitor(Visitor):
 
     tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
 
+    tpl_classRequestToSDL = '''class QDBusInterface;
+class RequestToSDL : public QObject
+{
+  Q_OBJECT
+ public:
+  explicit RequestToSDL(QObject *parent = 0);
+  ~RequestToSDL();
+%s
+ private:
+%s
+};'''
+
+    create_logger = '\nCREATE_LOGGERPTR_GLOBAL(logger_, "DBusPlugin")\n'
+
     def __init__(self, version="5.1.0", logs=False):
         self.enums = []
         self.names = []
@@ -23,9 +37,11 @@ class RequestToSdlVisitor(Visitor):
         if version == "4.8.5":
             self.prefix = 'Script'
             self.conntype = 'Direct'
-        else: #version == "5.1.0":
+        elif version == "5.1.0":
             self.prefix = 'JS'
             self.conntype = 'BlockingQueued'
+        else:
+           raise RuntimeError("Unsupported Qt version")
 
     def visitProtocol(self, protocol):
         if self.logs: print('Visit protocol')
@@ -158,6 +174,10 @@ class RequestToSdlVisitor(Visitor):
 
     tpl_validation = ''
 
+    tpl_new_delete = 'RequestToSDL::RequestToSDL(QObject *parent) {\n  QDBusConnection bus = QDBusConnection::sessionBus();\n%s\n}\n\nRequestToSDL::~RequestToSDL() {\n%s\n  this->deleteLater();\n}\n'
+
+    tpl_request = 'bool RequestToSDL::%s_%s(%sQ%sValue hmi_callback) {\n  LOG4CXX_TRACE(logger_, "ENTER");\n  QList<QVariant> args;\n%s  new requests::%s_%s(hmi_callback, %s , args, "%s");\n  LOG4CXX_TRACE(logger_, "EXIT");\n  return true;\n}\n'
+
     def new_interfaces(self):
         return '\n'.join([ self.tpl_new_interface % (i, i) for i in self.ifaces ])
 
@@ -177,4 +197,16 @@ class RequestToSdlVisitor(Visitor):
         return self.tpl_negative % (arg.name(), arg.interface(), arg.parent())
 
     def validation(self, arg):
-        return self.tpl_validation 
+        return self.tpl_validation
+
+    def requestclass(self):
+        return self.tpl_classRequestToSDL % (self.invokables(), self.interfaces())
+
+    def logger(self):
+        return self.create_logger
+
+    def requestsource(self):
+        return self.tpl_new_delete % (self.new_interfaces(), self.delete_interfaces())
+
+    def requests(self):
+        return [ self.tpl_request % (m + (self.prepare_args(m).replace(',', ', '), self.prefix, self.fill_args(m)) + m + m) for m in self.methods ]
