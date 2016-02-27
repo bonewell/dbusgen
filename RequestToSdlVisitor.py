@@ -34,12 +34,15 @@ class RequestToSDL : public QObject
         self.methods = OrderedDict()
         self.args = OrderedDict()
         self.logs = logs
-        if version == "4.8.5":
-            self.prefix = 'Script'
-            self.conntype = 'Direct'
-        elif version == "5.1.0":
+        self.check(version)
+
+    def check(self, version):
+        if version == "5.1.0":
             self.prefix = 'JS'
             self.conntype = 'BlockingQueued'
+        elif version == "4.8.5":
+            self.prefix = 'Script'
+            self.conntype = 'Direct'
         else:
            raise RuntimeError("Unsupported Qt version")
 

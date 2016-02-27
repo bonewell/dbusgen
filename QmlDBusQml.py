@@ -6,14 +6,24 @@ from saver import JSWriter
 class QmlDBusQml(AbstractSaver):
     tpl_filename = '%sProxy'
     parent = 'Item'
-    imports = [ '"Common.js" as Common', '".."' ]
+    import_list = [ '"Common.js" as Common', '".."' ]
 
     tpl_subitem = '  %(name)s {\n    id: sdl%(name)s\n  }'
 
     def __init__(self, data, version="5.1.0"):
         self.data = data
-        v = '1.1' if version == '4.8.5' else '2.0'
-        self.imports = ['QtQuick %s' % v] + self.imports
+        self.check(version)
+
+    def check(self, version):
+        if version == "5.1.0":
+           self.qtquick = '2.0'
+        elif version == "4.8.5":
+           self.qtquick = '1.1'
+        else:
+           raise RuntimeError("Unsupported Qt version")
+
+    def imports(self):
+        return ['QtQuick %s' % self.qtquick] + self.import_list
 
     def write(self, path):
         self.path = path
@@ -25,7 +35,7 @@ class QmlDBusQml(AbstractSaver):
         signals = self.data.signals(interface)
         if signals or methods:
             name = self.tpl_filename % interface
-            info = QmlWriter.Metadata(__file__, self.parent, self.imports)
+            info = QmlWriter.Metadata(__file__, self.parent, self.imports())
             with QmlWriter(name, self.path, info) as writer:
                 writer.write(self.tpl_subitem % { 'name': interface })
                 map(lambda m: writer.write(self.data.method(m)), methods)

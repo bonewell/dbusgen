@@ -22,7 +22,7 @@ class QmlDBusQmlVisitor(Visitor):
 '''
 
     def __init__(self, version="5.1.0", logs=False):
-        self.variant = 'variant' if version == '4.8.5' else 'var'
+        self.check(version)
         self.enums = OrderedDict()
         self.enums_names = []
         self.names = []
@@ -32,6 +32,14 @@ class QmlDBusQmlVisitor(Visitor):
         self.methods_list = OrderedDict()
         self.args = OrderedDict()
         self.logs = logs
+
+    def check(self, version):
+        if version == '5.1.0':
+            self.variant = 'var'
+        elif version == '4.8.5':
+            self.variant = 'variant'
+        else:
+           raise RuntimeError("Unsupported Qt version")
 
     def visitProtocol(self, protocol):
         if self.logs: print('Visit protocol')
