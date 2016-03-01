@@ -60,3 +60,27 @@ class Argument(Component):
 
     def restrictedArray(self):
         return self.isArray() and (self.info.minsize > 0 or self.info.maxsize > 0)
+
+    def minvalue(self):
+        try:
+            return int(self.info.minvalue)
+        except TypeError:
+            return None
+
+    def maxvalue(self):
+        try:
+            return int(self.info.maxvalue)
+        except TypeError:
+            return None
+
+    def minlength(self):
+        try:
+            return int(self.info.minlength)
+        except TypeError:
+            return 0
+
+    def maxlength(self):
+        try:
+            return int(self.info.maxlength)
+        except TypeError:
+            return 0

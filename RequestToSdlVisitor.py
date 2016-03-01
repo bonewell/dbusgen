@@ -175,7 +175,7 @@ class RequestToSDL : public QObject
 
     tpl_positive = '%s    args << QVariant::fromValue(%s_tmp);'
 
-    tpl_validation = ''
+    tpl_optional = '    if (%(name)s_tmp.presence) {\n%(bounds)s    }\n'
 
     tpl_new_delete = 'RequestToSDL::RequestToSDL(QObject *parent) {\n  QDBusConnection bus = QDBusConnection::sessionBus();\n%s\n}\n\nRequestToSDL::~RequestToSDL() {\n%s\n  this->deleteLater();\n}\n'
 
@@ -194,13 +194,43 @@ class RequestToSDL : public QObject
         return self.tpl_condition % (arg.name(), arg.name())
 
     def positive(self, arg):
-        return self.tpl_positive % (self.validation(arg), arg.name())
+        return self.tpl_positive % (self.validation('%s_tmp' % arg.name(), arg), arg.name())
 
     def negative(self, arg):
         return self.tpl_negative % (arg.name(), arg.interface(), arg.parent())
 
-    def validation(self, arg):
-        return self.tpl_validation
+    def bounds(self, name, arg):
+        if arg.isArray():
+            return name
+        elif arg.isStruct():
+            struct = self.struts[(arg.interface(), arg.name())]
+            return ''.join([ self.validation('%s.%s' % (name, p.name()), p) for p in struct ])
+        else:
+            return self.bounds_basic(name, arg)
+
+    def bounds_basic(self, name, arg):
+        argtype = arg.type()
+        if argtype in ('Integer', 'Float'):
+            conds = []
+            if arg.minvalue() is not None:
+               conds.append('(%s < %d)' % (name, arg.minvalue()))
+            if arg.maxvalue() is not None:
+               conds.append('(%s > %d)' % (name, arg.maxvalue()))
+            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), '')
+        if argtype == 'String':
+            conds = []
+            if arg.minlength() > 0:
+               conds.append('(%s.size() < %d)' % (name, arg.minlength()))
+            if arg.maxlength() > 0:
+               conds.append('(%s.size() > %d)' % (name, arg.maxlength()))
+            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), '')
+        return ''
+
+    def validation(self, name, arg):
+        if arg.isMandatory():
+            return self.bounds(name, arg)
+        else:
+            return self.tpl_optional % { 'name': arg.name(), 'bounds': self.bounds(name + '.val', arg) }
 
     def requestclass(self):
         return self.tpl_classRequestToSDL % (self.invokables(), self.interfaces())
