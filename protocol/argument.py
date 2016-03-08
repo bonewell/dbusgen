@@ -84,3 +84,15 @@ class Argument(Component):
             return int(self.info.maxlength)
         except TypeError:
             return 0
+
+    def minsize(self):
+        try:
+            return int(self.info.minsize)
+        except TypeError:
+            return 0
+
+    def maxsize(self):
+        try:
+            return int(self.info.maxsize)
+        except TypeError:
+            return 0

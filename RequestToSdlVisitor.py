@@ -2,16 +2,6 @@ from collections import OrderedDict
 from protocol import Visitor, TypeArgument
 
 class RequestToSdlVisitor(Visitor):
-    tpl_list_params = '  object.setProperty("%s", %s);\n'
-
-    tpl_list_params_value_mandatory = 'CreateQJSValue(value.%s)'
-
-    tpl_list_params_value = 'value.%s.presence ? CreateQJSValue(value.%s.val) : QJSValue()'
-
-    tpl_mandatory_param = '\n  param = CreateQJSValue(reply.argumentAt<%d>());'
-
-    tpl_optional_param = '\n  if (reply.argumentAt<%d>().presence) {\n    param = CreateQJSValue(reply.argumentAt<%d>().val);\n  } else {\n    param = QJSValue();\n  }'
-
     tpl_classRequestToSDL = '''class QDBusInterface;
 class RequestToSDL : public QObject
 {
@@ -24,7 +14,31 @@ class RequestToSDL : public QObject
 %s
 };'''
 
+    tpl_new_interface = '  %(name)s = new QDBusInterface("com.ford.sdl.core", "/", "com.ford.sdl.core.%(name)s", bus, this);'
+
+    tpl_delete_interface = '  %(name)s->deleteLater();'
+
+    tpl_fill_arg = '  %(type)s %(name)s_tmp;\n  if (%(condition)s) {\n%(positive)s\n  } else {\n%(negative)s\n  }\n'
+
+    tpl_condition = 'VariantToValue(%(name)s, %(name)s_tmp)'
+
+    tpl_negative = '    LOG4CXX_ERROR(logger_, "%(name)s in %(interface)s_%(parent)s is NOT valid");\n    return false;'
+
+    tpl_positive = '%(data)s    args << QVariant::fromValue(%(name)s_tmp);'
+
+    tpl_optional = '    if (%(name)s_tmp.presence) {\n%(bounds)s    }\n'
+
+    tpl_new_delete = 'RequestToSDL::RequestToSDL(QObject *parent) {\n  QDBusConnection bus = QDBusConnection::sessionBus();\n%(news)s\n}\n\nRequestToSDL::~RequestToSDL() {\n%(deletes)s\n  this->deleteLater();\n}\n'
+
+    tpl_request = 'bool RequestToSDL::%(name)s(%(args)sQ%(prefix)sValue hmi_callback) {\n  LOG4CXX_TRACE(logger_, "ENTER");\n  QList<QVariant> args;\n%(fills)s  new requests::%(name)s(hmi_callback, %(interface)s , args, "%(rpc)s");\n  LOG4CXX_TRACE(logger_, "EXIT");\n  return true;\n}\n'
+
     create_logger = '\nCREATE_LOGGERPTR_GLOBAL(logger_, "DBusPlugin")\n'
+
+    tpl_interface = '  QDBusInterface *%s;'
+
+    tpl_invokable = '  Q_INVOKABLE bool %(name)s(%(args)sQ%(prefix)sValue hmi_callback);'
+
+    tpl_logmessage = '      LOG4CXX_ERROR(logger_, "%s in %s out of bounds");\n      return false;\n'
 
     def __init__(self, version="5.1.0", logs=False):
         self.enums = []
@@ -96,19 +110,6 @@ class RequestToSDL : public QObject
     def createArgument(self, arg):
         self.args[(arg.interface(), arg.parent())].append(arg)
 
-
-    def params(self, struct):
-        text = ''
-        for p in self.structures[struct]:
-            text += self.tpl_list_params % (p.name(), self.param_value(p))
-        return text
-
-    def param_value(self, arg):
-        if arg.isMandatory():
-            return self.tpl_list_params_value_mandatory % arg.name()
-        else:
-            return self.tpl_list_params_value % (arg.name(), arg.name())
-
     def qt_param_type(self, arg):
         typename = arg.type()
         if typename == 'Integer': code = 'int'
@@ -129,25 +130,6 @@ class RequestToSDL : public QObject
         return code
 
 
-    def prepare_param(self, arg):
-        if arg.isMandatory():
-            text = self.tpl_mandatory_param % self.uid
-        else:
-            text = self.tpl_optional_param % (self.uid, self.uid)
-        text += '\n  qjsValueList.append(param);'
-        self.uid += 1
-        return text
-
-    def func_params(self, method):
-        return ','.join([ self.qt_param_type(p) for p in self.args[method] if p.direction == TypeArgument.Output])
-
-    def prepared_params(self, method):
-        self.uid = 0
-        return ''.join([ self.prepare_param(p) for p in self.args[method] if p.direction == TypeArgument.Output])
-
-    tpl_interface = '  QDBusInterface *%s;'
-    tpl_invokable = '  Q_INVOKABLE bool %s_%s(%sQ%sValue hmi_callback);'
-
     def interfaces(self):
         return '\n'.join([ self.tpl_interface % i for i in self.ifaces ])
 
@@ -155,7 +137,7 @@ class RequestToSDL : public QObject
         return '\n'.join([ self.prepare_invokable(m) for m in self.methods ])
 
     def prepare_invokable(self, method):
-        return self.tpl_invokable % (method + (self.prepare_args(method), self.prefix))
+        return self.tpl_invokable % {'name': '_'.join(method), 'args': self.prepare_args(method), 'prefix': self.prefix}
 
     def prepare_args(self, method):
         params = [ 'QVariant %s,' % arg.name() for arg in self.args[method] if arg.direction == TypeArgument.Input ]
@@ -163,50 +145,42 @@ class RequestToSDL : public QObject
            return ''.join(params)
         return ''
 
-    tpl_new_interface = '  %s = new QDBusInterface("com.ford.sdl.core", "/", "com.ford.sdl.core.%s", bus, this);'
-
-    tpl_delete_interface = '  %s->deleteLater();'
-
-    tpl_fill_arg = '  %s %s_tmp;\n  if (%s) {\n%s\n  } else {\n%s\n  }\n'
-    
-    tpl_condition = 'VariantToValue(%s, %s_tmp)'
-
-    tpl_negative = '    LOG4CXX_ERROR(logger_, "%s in %s_%s is NOT valid");\n    return false;'
-
-    tpl_positive = '%s    args << QVariant::fromValue(%s_tmp);'
-
-    tpl_optional = '    if (%(name)s_tmp.presence) {\n%(bounds)s    }\n'
-
-    tpl_new_delete = 'RequestToSDL::RequestToSDL(QObject *parent) {\n  QDBusConnection bus = QDBusConnection::sessionBus();\n%s\n}\n\nRequestToSDL::~RequestToSDL() {\n%s\n  this->deleteLater();\n}\n'
-
-    tpl_request = 'bool RequestToSDL::%s_%s(%sQ%sValue hmi_callback) {\n  LOG4CXX_TRACE(logger_, "ENTER");\n  QList<QVariant> args;\n%s  new requests::%s_%s(hmi_callback, %s , args, "%s");\n  LOG4CXX_TRACE(logger_, "EXIT");\n  return true;\n}\n'
-
     def new_interfaces(self):
-        return '\n'.join([ self.tpl_new_interface % (i, i) for i in self.ifaces ])
+        return '\n'.join([ self.tpl_new_interface % {'name': i} for i in self.ifaces ])
 
     def delete_interfaces(self):
-        return '\n'.join([ self.tpl_delete_interface % i for i in self.ifaces ])
+        return '\n'.join([ self.tpl_delete_interface % {'name': i} for i in self.ifaces ])
 
     def fill_args(self, method):
-        return ''.join([ self.tpl_fill_arg % (self.qt_param_type(arg), arg.name(), self.condition(arg), self.positive(arg), self.negative(arg)) for arg in self.args[method] if arg.direction == TypeArgument.Input ])
+        return ''.join([ self.tpl_fill_arg % {'type': self.qt_param_type(arg), 'name': arg.name(), 'condition': self.condition(arg), 'positive': self.positive(arg), 'negative': self.negative(arg)} for arg in self.args[method] if arg.direction == TypeArgument.Input ])
 
     def condition(self, arg):
-        return self.tpl_condition % (arg.name(), arg.name())
+        return self.tpl_condition % {'name': arg.name()}
 
     def positive(self, arg):
-        return self.tpl_positive % (self.validation('%s_tmp' % arg.name(), arg), arg.name())
+        return self.tpl_positive % {'name': arg.name(), 'data': self.validation('%s_tmp' % arg.name(),arg)}
 
     def negative(self, arg):
-        return self.tpl_negative % (arg.name(), arg.interface(), arg.parent())
+        return self.tpl_negative % {'name': arg.name(), 'interface': arg.interface(), 'parent': arg.parent()}
 
     def bounds(self, name, arg):
         if arg.isArray():
-            return name
+            return self.bounds_array(name, arg)
         elif arg.isStruct():
             struct = self.struts[(arg.interface(), arg.name())]
             return ''.join([ self.validation('%s.%s' % (name, p.name()), p) for p in struct ])
         else:
             return self.bounds_basic(name, arg)
+
+    def bounds_array(self, name, arg):
+        conds = ''
+        if arg.minsize() > 0:
+            conds += '    if (%s.count() < %d) {      \n%s    }\n' % (name, arg.minsize(), self.logmessage(arg))
+        if arg.maxsize() > 0:
+            conds += '    if (%s.count() > %d) {      \n%s    }\n' % (name, arg.maxsize(), self.logmessage(arg))
+        if arg.restricted():
+            pass
+        return conds
 
     def bounds_basic(self, name, arg):
         argtype = arg.type()
@@ -216,15 +190,18 @@ class RequestToSDL : public QObject
                conds.append('(%s < %d)' % (name, arg.minvalue()))
             if arg.maxvalue() is not None:
                conds.append('(%s > %d)' % (name, arg.maxvalue()))
-            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), '')
+            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), self.logmessage(arg))
         if argtype == 'String':
             conds = []
             if arg.minlength() > 0:
                conds.append('(%s.size() < %d)' % (name, arg.minlength()))
             if arg.maxlength() > 0:
                conds.append('(%s.size() > %d)' % (name, arg.maxlength()))
-            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), '')
+            return '    if (%s) {      \n%s    }\n' % (' || '.join(conds), self.logmessage(arg))
         return ''
+
+    def logmessage(self, arg):
+        return self.tpl_logmessage % (arg.name(), arg.parent())
 
     def validation(self, name, arg):
         if arg.isMandatory():
@@ -239,7 +216,7 @@ class RequestToSDL : public QObject
         return self.create_logger
 
     def requestsource(self):
-        return self.tpl_new_delete % (self.new_interfaces(), self.delete_interfaces())
+        return self.tpl_new_delete % {'news': self.new_interfaces(), 'deletes': self.delete_interfaces()}
 
     def requests(self):
-        return [ self.tpl_request % (m + (self.prepare_args(m).replace(',', ', '), self.prefix, self.fill_args(m)) + m + m) for m in self.methods ]
+        return [ self.tpl_request % {'name': '_'.join(m), 'args': self.prepare_args(m).replace(',', ', '), 'prefix': self.prefix, 'fills': self.fill_args(m), 'interface': m[0], 'rpc': m[1]} for m in self.methods ]
