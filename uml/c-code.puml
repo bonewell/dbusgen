@@ -1,0 +1,6 @@
+@startuml
+left to right direction
+(Generate C code of protocol messages) as (C)
+:User: -- (C)
+(C) ..> (Read XML protocol) : include
+@enduml

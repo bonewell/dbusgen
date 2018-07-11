@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+namespace terms {
+    interface Adapter {
+        + interfaces() : InterfacesList
+        + interface(name : string) : Interface
+        + functions(interface : Interface) : FunctionsList
+        + function(name : string, interface : Interface, type : string = None) : Function
+        + structures(interface : Interface) : StructuresList
+        + structure(name : string, interface : Interface) : Structure
+        + parameters(function : Function) : ParametersList
+        + parameters(structure : Structure) : ParametersList
+        + enumerations(interface : Interface) EnumerationsList
+        + enumeration(name : string, interface : Interface) : Enumeration
+    }
+    class Function <<datatype>> {
+        + name : string
+        + type : string
+        + provider : string = None
+        + interface : Interface
+    }
+    class Structure <<datatype>> {
+        + name : string
+        + interface : Interface
+    }
+    class Interface <<datatype>> {
+        + name : string
+    }
+    class Parameter <<datatype>> {
+        + name : string
+        + type : string
+        + mandatory : bool = false
+        + minlength : int = None
+        + maxlength : int = None
+        + minsize : int = None
+        + maxsize : int = None
+        + is_array : bool = false
+        + minvalue : string = None
+        + maxvalue : string = None
+        + defvalue : string = None
+        + is_structure : bool = false
+        + parent : object = None
+    }
+    class Enumeration <<datatype>> {
+        + name : string
+        + elements : EnumerationElementsList
+        + interface : Interface
+    }
+    class EnumerationElement <<datatype>> {
+        + name : string
+        + value : int
+        + internal_name : string = None
+    }
+    Interface --o Function
+    Interface -o Structure
+    Enumeration o- Interface
+    EnumerationElement "1..*" --o Enumeration
+    Parameter o- Function
+}
+XMLAdapter ..|> terms.Adapter
+@enduml

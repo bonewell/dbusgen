@@ -1,0 +1,71 @@
+@startuml
+namespace protocol {
+    class Component {
+        - adapter : terms.Adapter
+        + accept(v : Visitor)
+    }
+    class Enumeration {
+        - info : terms.Enumeration
+        + accept(v : Visitor)
+    }
+    class Argument {
+        - type : TypeArgument
+        - info : terms.Parameter
+        + accept(v : Visitor)
+    }
+    class Composite {
+        - elements : Component
+        + load()
+        + process(v : Visitor)
+    }
+    Enumeration -|> Component
+    Component <|-- Composite
+    Component <|- Argument
+    Component --o Composite
+    enum TypeArgument {
+        Undefined
+        Input
+        Output
+    }
+    Argument *-- TypeArgument
+    class Protocol {
+        + load()
+        + accept(v : Visitor)
+    }
+    class Signal {
+        - info : terms.Function
+        + load()
+        + accept(v : Visitor)
+    }
+    class Structure {
+        - info : terms.Structure
+        + load()
+        + accept(v : Visitor)
+    }
+    class Method {
+        - request : terms.Function
+        - response : terms.Function
+        + load()
+        + accept(v : Visitor)
+    }
+    class Interface {
+        - info : terms.Interface
+        + load()
+        + accept(v : Visitor)
+    }
+    Protocol -|> Composite
+    Signal -|> Composite
+    Composite <|-- Structure
+    Composite <|-- Method
+    Composite <|-- Interface
+    interface Visitor {
+        + visit(item : Protocol) : bool
+        + visit(item : Interface) : bool
+        + visit(item : Signal) : bool
+        + visit(item : Method) : bool
+        + visit(item : Argument)
+        + visit(item : Structure) : bool
+        + visit(item : Enumeration)
+    }
+}
+@enduml

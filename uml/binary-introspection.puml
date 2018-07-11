@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+(Generate binary view of XML introspection) as (bin)
+:User: -- (bin)
+(bin) ..> (Read XML protocol) : include
+(bin) ..> (Filter SDL provider messages) : include
+(bin) .> (Generate XML introspection) : include
+@enduml

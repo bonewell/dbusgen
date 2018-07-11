@@ -1,0 +1,10 @@
+@startuml
+interface terms.Adapter
+class protocol.Component {
+    - adapter : terms.Adapter
+}
+protocol.Component *- terms.Adapter
+protocol.Component <.. DBusIntrospectionVisitor
+interface protocol.Visitor
+protocol.Visitor <|.. DBusIntrospectionVisitor
+@enduml

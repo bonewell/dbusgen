@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+(Generate QML code of protocol messages) as (QML)
+:User: -- (QML)
+(QML) ..> (Read XML protocol) : include
+(QML) ..> (Generate handling of SDL provider messages) : include
+(QML) .> (Generate handling of HMI provider messages) : include
+@enduml

@@ -1,0 +1,13 @@
+@startuml
+[HMI protocol] as HMI
+[D-Bus introspection] as DBus
+package "Up layer" {
+    [C code for SDL] ..> HMI
+    [Binary introspection for SDL] ..> DBus
+    [C++/Qt plugin for HMI] as Qt
+    Qt ..> DBus
+    Qt ..> HMI
+    [QML code for HMI] ..> HMI
+}
+DBus ..> HMI
+@enduml

@@ -1,0 +1,8 @@
+@startuml
+left to right direction
+(Generate C++/Qt code of protocol messages) as (C++)
+:User: -- (C++)
+(C++) ..> (Read XML protocol) : include
+(C++) ..> (Generate handling of SDL provider messages) : include
+(C++) .> (Generate handling of HMI provider messages) : include
+@enduml

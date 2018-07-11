@@ -1,0 +1,15 @@
+@startuml
+left to right direction
+actor User
+rectangle dbusgen {
+    User -- (Generate C code of protocol messages)
+    (Generate binary view of XML introspection) as (binXML)
+    (Generate C++/Qt code of protocol messages) as (C++)
+    (Generate XML introspection) as (XML)
+    User -- (binXML)
+    User -- (C++)
+    User -- (Generate QML code protocol messages)
+    (binXML) ..> (XML) : include
+    (C++) <.. (XML) : extends
+}
+@enduml
